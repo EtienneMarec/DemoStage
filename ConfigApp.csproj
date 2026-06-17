@@ -8,4 +8,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- Copier les fichiers JSON de traduction dans le dossier de sortie -->
+  <ItemGroup>
+    <None Update="Languages\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

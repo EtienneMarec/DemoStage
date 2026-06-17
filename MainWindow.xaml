@@ -1,0 +1,21 @@
+<Window x:Class="ConfigApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Renard Doux" Height="400" Width="600"
+        WindowStartupLocation="CenterScreen"
+        Background="#F5F5F5">
+    <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <TextBlock Text="Ceci est la V0 du fox soft" 
+                       FontSize="32" 
+                       FontWeight="Bold"
+                       Foreground="#333333"
+                       TextAlignment="Center"
+                       Margin="0,0,0,20"/>
+            <TextBlock Text="Application de configuration du système fox"
+                       FontSize="16"
+                       Foreground="#666666"
+                       TextAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</Window>

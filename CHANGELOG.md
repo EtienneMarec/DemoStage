@@ -2,6 +2,71 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
+## [0.2.0] - 2026-06-18
+
+### Ajouté
+- **Extension à 20 Centrales**
+  - Grille 4 lignes × 5 colonnes (au lieu de 2 × 5)
+  - Déploiement sur le double d'espace
+
+- **Système de Gestion Hiérarchique des Centrales**
+  - Types de centrales : CPU, IHM (HMI), LM
+  - Centrale 1 forcée comme CPU au démarrage (immuable)
+  - Chaque IHM/LM doit être lié à un CPU parent
+  - Affichage du lien CPU (ex: "IHM-CPU1", "LM-CPU2")
+  - Fenêtre `SelectCPUWindow` pour choisir le CPU parent
+
+- **Limites de Capacité**
+  - Limites globales :
+    - Maximum 4 CPU
+    - Maximum 4 IHM
+    - Maximum 12 LM
+  - Limites par CPU :
+    - Maximum 2 IHM par CPU
+    - Maximum 3 LM par CPU
+  - Validation à l'ajout et à la modification
+  - Messages d'erreur traduits
+
+- **Modifications UI**
+  - Type non modifiable sur centrale 1
+  - Affichage multi-ligne avec liaison CPU
+  - Codage couleur : Bleu=CPU, Vert=IHM, Orange=LM
+  - Bordure épaissie lors de l'assignation
+
+- **Nouvelles Traductions**
+  - `select_cpu_title`: "Sélectionner un CPU" / "Select a CPU"
+  - `select_cpu_for_ihm`: Description pour IHM
+  - `select_cpu_for_lm`: Description pour LM
+  - `error_limit_ihm_cpu`: "Limite atteinte : maximum 2 IHM par CPU"
+  - `error_limit_lm_cpu`: "Limite atteinte : maximum 3 LM par CPU"
+  - `btn_validate`: "Valider" / "Validate"
+
+### Changé
+- Classe `CentralInfo` étendue avec propriété `LinkedCPU`
+- Logique `AddCentralButton_Click` refactorisée pour gérer les hiérarchies
+- Logique `ModifyCentralButton_Click` refactorisée avec validation per-CPU
+- Affichage des centrales modifié pour montrer la liaison CPU
+- `CentralInfo` rendu public pour accès dans `SelectCPUWindow`
+
+### Fichiers Créés
+- `SelectCPUWindow.xaml` - Interface de sélection du CPU parent
+- `SelectCPUWindow.xaml.cs` - Code-behind de sélection du CPU parent
+
+### Fichiers Modifiés
+- `MainWindow.xaml` - Ajout 4e ligne à la grille de centrales
+- `MainWindow.xaml.cs` - Logique complète redessinée pour hiérarchies
+- `Languages/fr.json` - Ajout 7 nouvelles clés de traduction
+- `Languages/en.json` - Ajout 7 nouvelles clés de traduction en anglais
+- `README.md` - Documentation mise à jour
+- `CHANGELOG.md` - Ce fichier
+
+### Notes
+- La centrale 1 démarre toujours en tant que CPU
+- Le système validera les limites de capacité en temps réel
+- Les modifications s'appliquent immédiatement à l'affichage
+
+---
+
 ## [0.1.0] - 2026-06-17
 
 ### Ajouté

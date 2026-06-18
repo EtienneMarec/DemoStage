@@ -14,6 +14,10 @@ Testings/
 ├── LanguageManager.cs             # Gestionnaire de traductions
 ├── SettingsWindow.xaml            # Fenêtre des paramètres
 ├── SettingsWindow.xaml.cs         # Code-behind des paramètres
+├── AddCentralWindow.xaml          # Fenêtre de sélection de type
+├── AddCentralWindow.xaml.cs       # Code-behind sélection de type
+├── SelectCPUWindow.xaml           # Fenêtre de sélection du CPU parent
+├── SelectCPUWindow.xaml.cs        # Code-behind sélection du CPU parent
 ├── Languages/                     # Fichiers de traductions
 │   ├── fr.json                    # Traductions français
 │   └── en.json                    # Traductions anglais
@@ -57,8 +61,22 @@ dotnet run
   - Bouton Paramètres (⚙)
   - Zone de texte pour le nom
   - Bouton Détails
-- **Grille de capteurs** : 10 centrales organisées en 2 lignes de 5 colonnes
+- **Grille de centrales** : 20 centrales organisées en 4 lignes de 5 colonnes
   - Chaque centrale dispose d'un bouton "+" pour ajouter
+  - Centrale 1 est toujours un CPU (non modifiable)
+  - Les HMI et LM doivent être liés à un CPU parent
+
+### Gestion des Centrales
+- **Types de centrales** : CPU, IHM, LM
+- **Limites globales** :
+  - Maximum 4 CPU
+  - Maximum 4 IHM (anciennement supportés)
+  - Maximum 12 LM (anciennement supportés)
+- **Limites par CPU** :
+  - Maximum 2 IHM par CPU
+  - Maximum 3 LM par CPU
+- **Centrale 1** : Toujours CPU, immuable
+- **Liaison hiérarchique** : Chaque IHM/LM affiche son CPU parent (ex: "IHM-CPU1")
 
 ### Support Multilingue
 - **Système de traduction JSON** flexible et maintenable

@@ -1,126 +1,67 @@
-# Renard Doux - Application de Configuration Système
+# Internship demo: software for marine fire detection
 
-Application WPF C# pour la configuration et le contrôle d'un système électronique avec support multilingue (FR/EN).
+Interactive demo of the work I did during my second-year engineering internship (TELECOM Nancy), from June 15 to August 20, 2026, at Marinelec Technologies in Quimper, France.
 
-## Structure du Projet
+**This repository contains neither the source code of the delivered applications nor any company data.** Each tool is a simulation rewritten for the browser: the use cases are faithful, while the formats and data are made up.
 
-```
-Testings/
-├── ConfigApp.csproj              # Fichier projet
-├── App.xaml                       # Définition de l'application
-├── App.xaml.cs                    # Code-behind de l'application
-├── MainWindow.xaml                # Fenêtre principale (UI)
-├── MainWindow.xaml.cs             # Code-behind de la fenêtre principale
-├── LanguageManager.cs             # Gestionnaire de traductions
-├── SettingsWindow.xaml            # Fenêtre des paramètres
-├── SettingsWindow.xaml.cs         # Code-behind des paramètres
-├── AddCentralWindow.xaml          # Fenêtre de sélection de type
-├── AddCentralWindow.xaml.cs       # Code-behind sélection de type
-├── SelectCPUWindow.xaml           # Fenêtre de sélection du CPU parent
-├── SelectCPUWindow.xaml.cs        # Code-behind sélection du CPU parent
-├── Languages/                     # Fichiers de traductions
-│   ├── fr.json                    # Traductions français
-│   └── en.json                    # Traductions anglais
-├── README.md                      # Cette documentation
-├── CHANGELOG.md                   # Historique des modifications
-└── .gitignore                     # Fichier Git ignore
-```
+The demo interface itself is in French.
 
-## Prérequis
+## Running the demo
 
-- .NET 8.0 SDK (ou version ultérieure)
-- Visual Studio 2022 ou Visual Studio Code avec C# DevKit
-
-## Installation et Exécution
-
-### Avec Visual Studio
-
-1. Ouvrir `ConfigApp.csproj` avec Visual Studio
-2. Visual Studio chargera automatiquement le projet
-3. Appuyer sur `F5` pour compiler et exécuter
-
-### Avec la ligne de commande
+Nothing to install. Open `index.html` in a recent browser, or serve the folder:
 
 ```bash
-# Restaurer les dépendances
-dotnet restore
-
-# Compiler le projet
-dotnet build
-
-# Exécuter l'application
-dotnet run
+python -m http.server 8765
 ```
 
-## Fonctionnalités
+The page works offline and sends no data anywhere.
 
-### Interface Utilisateur
-- **Fenêtre fullscreen** avec layout professionnel
-- **Barre de menu** : Fichiers, Transfert, Moniteur, Aide, MCS (placeholders)
-- **Bandeau d'outils** avec :
-  - Bouton Paramètres (⚙)
-  - Zone de texte pour le nom
-  - Bouton Détails
-- **Grille de centrales** : 20 centrales organisées en 4 lignes de 5 colonnes
-  - Chaque centrale dispose d'un bouton "+" pour ajouter
-  - Centrale 1 est toujours un CPU (non modifiable)
-  - Les HMI et LM doivent être liés à un CPU parent
+## The projects
 
-### Gestion des Centrales
-- **Types de centrales** : CPU, IHM, LM
-- **Limites globales** :
-  - Maximum 4 CPU
-  - Maximum 4 IHM (anciennement supportés)
-  - Maximum 12 LM (anciennement supportés)
-- **Limites par CPU** :
-  - Maximum 2 IHM par CPU
-  - Maximum 3 LM par CPU
-- **Centrale 1** : Toujours CPU, immuable
-- **Liaison hiérarchique** : Chaque IHM/LM affiche son CPU parent (ex: "IHM-CPU1")
+| Project | Purpose | Original stack | In the demo |
+|---|---|---|---|
+| **FOX_Soft** (main project) | Desktop application that describes, validates, archives and transfers a ship's complete fire-detection configuration | C#, .NET, WPF, MVVM | Topology, spreadsheet-style device editing, Cause & Effects editor, loop current calculation, pre-export checks, assisted import, real screenshots |
+| **FoxBinVisualizer** | Decodes a binary file field by field and compares two files | C#, WPF | Decoding of a made-up format, differences, detection of a corrupted byte |
+| **FoxFrameGenerator** | Builds, sends and decodes serial frames to test firmware | C#, WPF | Configurable envelope, deframer, merged multi-source stream on a virtual port |
+| **Alarm log analyser** | Rates alarm ergonomics against EEMUA 191 and ISA 18.2 and replays the panel state | HTML, JavaScript | Point-in-time reconstruction, diagnosis, alarm floods, before/after comparison |
+| **PhoenixConfigAnalizer** | Finds logic reused across a batch of configurations | C#, WPF | Canonical signatures on a fictional fleet |
+| **FireDeck** | Fire-detection quotes from ship deck plans | C#, WPF, .NET 8 | Placement on an imaginary plan, bill of materials, CSV and SVG export |
 
-### Support Multilingue
-- **Système de traduction JSON** flexible et maintenable
-- **Français et Anglais** par défaut
-- **Fenêtre Paramètres** pour changer la langue en temps réel
-- **Mise à jour automatique** de tous les éléments UI lors du changement de langue
+## The internship in numbers
 
-## Utilisation du Système de Traduction
+- About 67,000 lines of code delivered, including 48,000 for FOX_Soft.
+- 1,255 automated tests passing on FOX_Soft at version 0.5.0.
+- Four major FOX_Soft releases in ten weeks, from 0.2.0 to 0.5.0.
+- AI-assisted development (Claude Code), framed by sprints, human validation, tests and cross-reviews.
 
-### Ajouter une nouvelle langue
+## What is hidden
 
-1. Créer un fichier `Languages/[code].json` (exemple: `es.json` pour l'espagnol)
-2. Copier le contenu d'un fichier existant et traduire les valeurs
-3. Dans le code C#, utiliser `_languageManager.LoadLanguage("[code]")` pour charger la langue
+| Topic | In this demo |
+|---|---|
+| Source code | Not published. All the JavaScript was written for this repository. |
+| Control panel file format | Replaced by a made-up "DEMO" format. |
+| Integrity check | Public algorithms only. |
+| Internal serial protocol | Replaced by a fictional protocol. Only Modbus RTU follows a standard. |
+| Licensing, encryption, security audit | Not described. |
+| Ships, plans, configurations and logs | Generated from scratch. |
+| Power consumption figures and conversion tables | Demo values. |
+| Internship report, documents and internal information | Not included. |
 
-### Ajouter une nouvelle clé de traduction
+The screenshots in `assets/img/` show the real application, with synthetic test data.
 
-1. Ajouter la clé dans tous les fichiers JSON :
-```json
-{
-  "ma_nouvelle_cle": "valeur en français"
-}
+## Structure
+
+```
+index.html            Entry point
+assets/css/style.css  Styles, light and dark themes
+assets/js/core.js     Router, helpers, public CRCs
+assets/js/ce.js       Shared Cause & Effects grid
+assets/js/*.js        One page per project
+assets/img/           Screenshots of the real application
 ```
 
-2. Utiliser dans le code :
-```csharp
-string texte = _languageManager.Get("ma_nouvelle_cle");
-```
+The C#/WPF prototype from the first week is still available in the Git history, up to commit `4b441d9`.
 
-## Architecture
+## Disclaimer
 
-### LanguageManager
-Classe responsable de la gestion des traductions. Elle :
-- Charge les fichiers JSON depuis le dossier `Languages/`
-- Fournit l'accès aux traductions via la méthode `Get(key)`
-- Déclenche un événement `LanguageChanged` lors du changement de langue
-
-### Système de Binding
-Les éléments UI qui utilisent des traductions sont mis à jour automatiquement lors du changement de langue grâce à l'événement `LanguageChanged`.
-
-## Notes de Développement
-
-- L'application démarre en français par défaut
-- Les fichiers de traduction sont au format JSON pour la flexibilité
-- Les capteurs sont générés dynamiquement en C# pour faciliter la traduction
-- La fenêtre Paramètres est centrée sur la fenêtre principale
-
+These simulations are only meant to illustrate the work done. They must not be used to configure or test a real fire-detection system. Marinelec, PHOENIX and FOX refer to a third-party company and products; all related rights remain with their owners.

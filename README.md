@@ -4,7 +4,7 @@ Interactive demo of the work I did during my second-year engineering internship 
 
 **This repository contains neither the source code of the delivered applications nor any company data.** Each tool is a simulation rewritten for the browser: the use cases are faithful, while the formats and data are made up.
 
-The demo interface itself is in French.
+The demo is available in English and French.
 
 ## Running the demo
 
@@ -14,7 +14,7 @@ Nothing to install. Open `index.html` in a recent browser, or serve the folder:
 python -m http.server 8765
 ```
 
-The page works offline and sends no data anywhere.
+The page works offline and sends no data anywhere. It follows your browser's language; use the button in the top bar to switch, or add `?lang=en` or `?lang=fr` to the URL.
 
 ## The projects
 

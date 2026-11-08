@@ -4,31 +4,32 @@
 
 (() => {
   const VIEW = { w: 1200, h: 440 };
-  const LOOPS = { A: { label: 'Boucle A', color: 'var(--series-2)' }, B: { label: 'Boucle B', color: 'var(--series-1)' } };
+  const LOOP_WORD = L('Boucle', 'Loop');
+  const LOOPS = { A: { label: `${LOOP_WORD} A`, color: 'var(--series-2)' }, B: { label: `${LOOP_WORD} B`, color: 'var(--series-1)' } };
   const SYMBOLS = {
-    OPT: { label: 'Détecteur optique', glyph: (c) => `<circle r="5" fill="${c}"/>` },
-    HEAT: { label: 'Détecteur thermique', glyph: (c) => `<path d="M0-8c1 3 5 5 5 9a5 5 0 0 1-10 0c0-2 1-3 2-5 1 1 1 2 2 2 1-2 0-4 1-6z" fill="${c}"/>` },
-    MULTI: { label: 'Multi-capteur', glyph: (c) => `<circle cy="-3" r="3.4" fill="${c}"/><path d="M0 1 5 8H-5z" fill="${c}"/>` },
-    MCP: { label: 'Déclencheur manuel', square: true, glyph: (c) => `<text y="5" text-anchor="middle" font-size="15" font-weight="700" fill="${c}">F</text>` },
-    SND: { label: 'Sirène', glyph: (c) => `<path d="M-6-3h3l6-5V8L-3 3h-3z" fill="${c}"/>` },
-    BCN: { label: 'Sirène-flash', glyph: (c) => `<path d="M1-9-5 1h4l-2 8 7-11H0z" fill="${c}"/>` },
-    PANEL: { label: 'Centrale', square: true, glyph: (c) => `<rect x="-6" y="-5" width="12" height="10" rx="1.5" fill="none" stroke="${c}" stroke-width="2"/><path d="M-3 0h6" stroke="${c}" stroke-width="2"/>` },
+    OPT: { label: L('Détecteur optique', 'Optical detector'), glyph: (c) => `<circle r="5" fill="${c}"/>` },
+    HEAT: { label: L('Détecteur thermique', 'Heat detector'), glyph: (c) => `<path d="M0-8c1 3 5 5 5 9a5 5 0 0 1-10 0c0-2 1-3 2-5 1 1 1 2 2 2 1-2 0-4 1-6z" fill="${c}"/>` },
+    MULTI: { label: L('Multi-capteur', 'Multi-sensor'), glyph: (c) => `<circle cy="-3" r="3.4" fill="${c}"/><path d="M0 1 5 8H-5z" fill="${c}"/>` },
+    MCP: { label: L('Déclencheur manuel', 'Manual call point'), square: true, glyph: (c) => `<text y="5" text-anchor="middle" font-size="15" font-weight="700" fill="${c}">F</text>` },
+    SND: { label: L('Sirène', 'Sounder'), glyph: (c) => `<path d="M-6-3h3l6-5V8L-3 3h-3z" fill="${c}"/>` },
+    BCN: { label: L('Sirène-flash', 'Sounder-beacon'), glyph: (c) => `<path d="M1-9-5 1h4l-2 8 7-11H0z" fill="${c}"/>` },
+    PANEL: { label: L('Centrale', 'Control panel'), square: true, glyph: (c) => `<rect x="-6" y="-5" width="12" height="10" rx="1.5" fill="none" stroke="${c}" stroke-width="2"/><path d="M-3 0h6" stroke="${c}" stroke-width="2"/>` },
   };
   const DECKS = [
     {
-      id: 'main', name: 'Pont principal',
+      id: 'main', name: L('Pont principal', 'Main deck'),
       hull: 'M70 80H880Q1070 96 1150 220Q1070 344 880 360H70Q48 360 48 338V102Q48 80 70 80Z',
-      rooms: [[80, 104, 170, 232, 'Salle des machines'], [264, 104, 140, 110, 'Atelier'], [264, 226, 140, 110, 'Local groupe'], [418, 104, 180, 100, 'Cabines bâbord'], [418, 236, 180, 100, 'Cabines tribord'], [612, 104, 150, 232, 'Cuisine et réfectoire'], [776, 130, 150, 180, 'Magasin'], [940, 170, 110, 100, 'Cale avant']],
+      rooms: [[80, 104, 170, 232, L('Salle des machines', 'Engine room')], [264, 104, 140, 110, L('Atelier', 'Workshop')], [264, 226, 140, 110, L('Local groupe', 'Generator room')], [418, 104, 180, 100, L('Cabines bâbord', 'Port cabins')], [418, 236, 180, 100, L('Cabines tribord', 'Starboard cabins')], [612, 104, 150, 232, L('Cuisine et réfectoire', 'Galley and mess')], [776, 130, 150, 180, L('Magasin', 'Store')], [940, 170, 110, 100, L('Cale avant', 'Forward hold')]],
     },
     {
-      id: 'upper', name: 'Pont supérieur',
+      id: 'upper', name: L('Pont supérieur', 'Upper deck'),
       hull: 'M150 96H820Q1000 110 1070 220Q1000 330 820 344H150Q128 344 128 322V118Q128 96 150 96Z',
-      rooms: [[156, 120, 190, 200, 'Salon arrière'], [360, 120, 240, 86, 'Coursive et cabines'], [360, 234, 240, 86, 'Cabines passagers'], [614, 120, 190, 200, 'Salon avant'], [818, 150, 150, 140, 'Local technique']],
+      rooms: [[156, 120, 190, 200, L('Salon arrière', 'Aft lounge')], [360, 120, 240, 86, L('Coursive et cabines', 'Corridor and cabins')], [360, 234, 240, 86, L('Cabines passagers', 'Passenger cabins')], [614, 120, 190, 200, L('Salon avant', 'Forward lounge')], [818, 150, 150, 140, L('Local technique', 'Technical room')]],
     },
     {
-      id: 'bridge', name: 'Passerelle',
+      id: 'bridge', name: L('Passerelle', 'Bridge deck'),
       hull: 'M420 120H780Q880 130 920 220Q880 310 780 320H420Q398 320 398 298V142Q398 120 420 120Z',
-      rooms: [[424, 146, 110, 148, 'Local radio'], [548, 146, 170, 148, 'Timonerie'], [732, 170, 130, 100, 'Aileron']],
+      rooms: [[424, 146, 110, 148, L('Local radio', 'Radio room')], [548, 146, 170, 148, L('Timonerie', 'Wheelhouse')], [732, 170, 130, 100, L('Aileron', 'Bridge wing')]],
     },
   ];
 
@@ -49,7 +50,7 @@
     const c = LOOPS[m.loop].color;
     const s = SYMBOLS[m.type];
     const shape = s.square ? `<rect x="-14" y="-14" width="28" height="28" rx="3" fill="var(--surface)" stroke="${c}" stroke-width="2.4"/>` : `<circle r="14" fill="var(--surface)" stroke="${c}" stroke-width="2.4"/>`;
-    return `<g class="marker ${state.sel === m.id ? 'sel' : ''}" data-id="${m.id}" transform="translate(${m.x} ${m.y}) scale(${scale})" role="img" aria-label="${esc(s.label)}, ${LOOPS[m.loop].label}, numéro ${num}">
+    return `<g class="marker ${state.sel === m.id ? 'sel' : ''}" data-id="${m.id}" transform="translate(${m.x} ${m.y}) scale(${scale})" role="img" aria-label="${esc(s.label)}, ${LOOPS[m.loop].label}, ${L('numéro', 'number')} ${num}">
       <circle class="halo" r="18" fill="transparent"/>${shape}${s.glyph(c)}<text x="16" y="-12" font-size="13" font-weight="700" fill="var(--text)">${num}</text></g>`;
   }
   function planSvg() {
@@ -63,7 +64,7 @@
       return pts.length > 1 ? `<polyline points="${pts.map((m) => `${m.x},${m.y}`).join(' ')}" fill="none" stroke="${LOOPS[l].color}" stroke-width="${2 * scale}" stroke-linejoin="round"/>` : '';
     }).join('');
     const rooms = deck.rooms.map(([x, y, w, h, label]) => `<rect class="plan-room" x="${x}" y="${y}" width="${w}" height="${h}" rx="3"/><text class="plan-label" x="${x + w / 2}" y="${y + 18}">${esc(label)}</text>`).join('');
-    return `<svg class="plan ${state.tool ? '' : 'pan'}" id="fd-plan" viewBox="${state.vb.x} ${state.vb.y} ${state.vb.w} ${state.vb.h}" role="application" aria-label="Plan du ${esc(deck.name)}" tabindex="0">
+    return `<svg class="plan ${state.tool ? '' : 'pan'}" id="fd-plan" viewBox="${state.vb.x} ${state.vb.y} ${state.vb.w} ${state.vb.h}" role="application" aria-label="${L('Plan : ', 'Plan: ')}${esc(deck.name)}" tabindex="0">
       <path class="plan-hull" d="${deck.hull}"/>${rooms}<line class="plan-axis" x1="20" x2="1180" y1="220" y2="220"/>
       ${links}${list.map((m) => markerSvg(m, nums.get(m.id), scale)).join('')}
     </svg>`;
@@ -71,7 +72,7 @@
   function bomHtml() {
     const types = Object.keys(SYMBOLS).filter((t) => state.markers.some((m) => m.type === t));
     const count = (t, d) => state.markers.filter((m) => m.type === t && (!d || m.deck === d)).length;
-    return `<table class="data"><thead><tr><th>Équipement</th>${DECKS.map((d) => `<th class="num">${esc(d.name)}</th>`).join('')}<th class="num">Total</th></tr></thead>
+    return `<table class="data"><thead><tr><th>${L('Équipement', 'Equipment')}</th>${DECKS.map((d) => `<th class="num">${esc(d.name)}</th>`).join('')}<th class="num">Total</th></tr></thead>
       <tbody>${types.map((t) => `<tr><td>${esc(SYMBOLS[t].label)}</td>${DECKS.map((d) => `<td class="num">${count(t, d.id)}</td>`).join('')}<td class="num"><strong>${count(t)}</strong></td></tr>`).join('')}
       <tr><td><strong>Total</strong></td>${DECKS.map((d) => `<td class="num"><strong>${state.markers.filter((m) => m.deck === d.id).length}</strong></td>`).join('')}<td class="num"><strong>${state.markers.length}</strong></td></tr></tbody></table>`;
   }
@@ -157,7 +158,7 @@
   function renderTools() {
     const c = LOOPS[state.loop].color;
     $('#fd-tools', host).innerHTML = `
-      <button class="tool-sym ${state.tool === null ? 'on' : ''}" data-sym="" aria-pressed="${state.tool === null}"><svg width="26" height="26" viewBox="-14 -14 28 28" aria-hidden="true"><path d="M-6-10 8 3l-6 1 3 7-3 1-3-7-5 4z" fill="var(--text)"/></svg>Sélection, déplacement</button>
+      <button class="tool-sym ${state.tool === null ? 'on' : ''}" data-sym="" aria-pressed="${state.tool === null}"><svg width="26" height="26" viewBox="-14 -14 28 28" aria-hidden="true"><path d="M-6-10 8 3l-6 1 3 7-3 1-3-7-5 4z" fill="var(--text)"/></svg>${L('Sélection, déplacement', 'Select and move')}</button>
       ${Object.entries(SYMBOLS).map(([k, s]) => `<button class="tool-sym ${state.tool === k ? 'on' : ''}" data-sym="${k}" aria-pressed="${state.tool === k}"><svg width="26" height="26" viewBox="-14 -14 28 28" aria-hidden="true">${s.square ? `<rect x="-12" y="-12" width="24" height="24" rx="3" fill="none" stroke="${c}" stroke-width="2"/>` : `<circle r="12" fill="none" stroke="${c}" stroke-width="2"/>`}${s.glyph(c)}</svg>${esc(s.label)}</button>`).join('')}`;
     $$('[data-sym]', host).forEach((b) => b.addEventListener('click', () => { state.tool = b.dataset.sym || null; renderTools(); refreshPlan(); }));
   }
@@ -167,14 +168,14 @@
     mount(el) {
       host = el;
       el.innerHTML = `<header class="page-head">
-        <div class="kicker">Pour le service commercial · C#, WPF, .NET 8, MVVM</div>
+        <div class="kicker">${L('Pour le service commercial', 'For the sales team')} · C#, WPF, .NET 8, MVVM</div>
         <h1>FireDeck</h1>
-        <p>Pour établir un devis de détection incendie, il faut relever des quantités sur les plans du navire. FireDeck importe un plan DWG en vectoriel, le découpe en ponts, y fait placer les équipements en un clic et en tire la nomenclature, ainsi que des livrables PDF et PowerPoint.</p>
+        <p>${L('Pour établir un devis de détection incendie, il faut relever des quantités sur les plans du navire. FireDeck importe un plan DWG en vectoriel, le découpe en ponts, y fait placer les équipements en un clic et en tire la nomenclature, ainsi que des livrables PDF et PowerPoint.', 'Quoting a fire-detection system means taking off quantities from the ship’s plans. FireDeck imports a DWG plan as vectors, splits it into decks, lets you place equipment in one click and produces the bill of materials, along with PDF and PowerPoint deliverables.')}</p>
       </header>
-      ${simBanner('Le navire et son plan sont dessinés pour la démo, et aucun plan client n’est utilisé. Ici, l’import DWG et les exports PDF et PowerPoint sont remplacés par un export CSV et SVG.')}
+      ${simBanner(L('Le navire et son plan sont dessinés pour la démo, et aucun plan client n’est utilisé. Ici, l’import DWG et les exports PDF et PowerPoint sont remplacés par un export CSV et SVG.', 'The ship and its plan are drawn for this demo, and no customer plan is used. Here, the DWG import and the PDF and PowerPoint exports are replaced by CSV and SVG exports.'))}
       <div class="fd-layout">
         <aside class="card stack" style="gap:10px">
-          <label class="field">Boucle active
+          <label class="field">${L('Boucle active', 'Active loop')}
             <select id="fd-loop">${Object.entries(LOOPS).map(([k, l]) => `<option value="${k}" ${state.loop === k ? 'selected' : ''}>${l.label}</option>`).join('')}</select></label>
           <div id="fd-tools" style="display:grid;gap:2px"></div>
         </aside>
@@ -182,22 +183,22 @@
           <div class="btn-row">
             <div id="fd-decks" class="btn-row"></div>
             <span class="spacer"></span>
-            <button class="btn" data-fd="out" aria-label="Dézoomer">−</button>
-            <button class="btn" data-fd="in" aria-label="Zoomer">+</button>
-            <button class="btn" data-fd="fit">Tout voir</button>
-            <button class="btn" data-fd="undo">Annuler</button>
-            <button class="btn danger" data-fd="del">Supprimer</button>
+            <button class="btn" data-fd="out" aria-label="${L('Dézoomer', 'Zoom out')}">−</button>
+            <button class="btn" data-fd="in" aria-label="${L('Zoomer', 'Zoom in')}">+</button>
+            <button class="btn" data-fd="fit">${L('Tout voir', 'Fit to view')}</button>
+            <button class="btn" data-fd="undo">${L('Annuler', 'Undo')}</button>
+            <button class="btn danger" data-fd="del">${L('Supprimer', 'Delete')}</button>
           </div>
           <div class="fd-canvas" id="fd-canvas"></div>
           <div class="legend" style="justify-content:flex-start">
-            <span><i style="border-color:var(--series-2)"></i>Boucle A</span><span><i style="border-color:var(--series-1)"></i>Boucle B</span>
-            <span>Cliquez sur le plan pour poser le symbole choisi. Glissez un symbole pour le déplacer. Ctrl + molette pour zoomer.</span>
+            <span><i style="border-color:var(--series-2)"></i>${LOOP_WORD} A</span><span><i style="border-color:var(--series-1)"></i>${LOOP_WORD} B</span>
+            <span>${L('Cliquez sur le plan pour poser le symbole choisi. Glissez un symbole pour le déplacer. Ctrl + molette pour zoomer.', 'Click the plan to place the chosen symbol. Drag a symbol to move it. Ctrl + mouse wheel to zoom.')}</span>
           </div>
           <section class="card">
-            <div class="btn-row" style="margin-bottom:8px"><h3>Nomenclature</h3><span class="spacer"></span>
-              <button class="btn" data-fd="csv">Exporter en CSV</button><button class="btn" data-fd="svg">Exporter ce pont en SVG</button><button class="btn" data-fd="reset">Recharger l’exemple</button></div>
+            <div class="btn-row" style="margin-bottom:8px"><h3>${L('Nomenclature', 'Bill of materials')}</h3><span class="spacer"></span>
+              <button class="btn" data-fd="csv">${L('Exporter en CSV', 'Export as CSV')}</button><button class="btn" data-fd="svg">${L('Exporter ce pont en SVG', 'Export this deck as SVG')}</button><button class="btn" data-fd="reset">${L('Recharger l’exemple', 'Reload the example')}</button></div>
             <div class="table-wrap" id="fd-bom"></div>
-            <p class="note" style="margin:8px 0 0">Les prix ne figurent pas dans l’outil : le chiffrage reste réalisé en interne.</p>
+            <p class="note" style="margin:8px 0 0">${L('Les prix ne figurent pas dans l’outil : le chiffrage reste réalisé en interne.', 'Prices are not in the tool: costing stays an internal task.')}</p>
           </section>
         </div>
       </div>`;
@@ -214,20 +215,20 @@
         if (act === 'in') zoom(1 / 1.3);
         if (act === 'out') zoom(1.3);
         if (act === 'fit') { state.vb = { x: 0, y: 0, w: VIEW.w, h: VIEW.h }; refreshPlan(); }
-        if (act === 'del') { if (state.sel == null) toast('Sélectionnez d’abord un symbole avec l’outil de sélection.'); removeSelected(); }
+        if (act === 'del') { if (state.sel == null) toast(L('Sélectionnez d’abord un symbole avec l’outil de sélection.', 'First select a symbol with the selection tool.')); removeSelected(); }
         if (act === 'undo') {
           const prev = state.undo.pop();
-          if (prev) { state.markers = JSON.parse(prev); state.sel = null; refreshPlan(); } else toast('Rien à annuler.');
+          if (prev) { state.markers = JSON.parse(prev); state.sel = null; refreshPlan(); } else toast(L('Rien à annuler.', 'Nothing to undo.'));
         }
         if (act === 'reset') { state.markers = sampleMarkers(); state.undo = []; state.sel = null; refreshPlan(); }
         if (act === 'csv') {
           const types = Object.keys(SYMBOLS).filter((t) => state.markers.some((m) => m.type === t));
-          const lines = [['Équipement', ...DECKS.map((d) => d.name), 'Total'].join(';')];
+          const rows = [[L('Équipement', 'Equipment'), ...DECKS.map((d) => d.name), 'Total']];
           types.forEach((t) => {
             const counts = DECKS.map((d) => state.markers.filter((m) => m.type === t && m.deck === d.id).length);
-            lines.push([SYMBOLS[t].label, ...counts, counts.reduce((a, c) => a + c, 0)].join(';'));
+            rows.push([SYMBOLS[t].label, ...counts, counts.reduce((a, c) => a + c, 0)]);
           });
-          download('nomenclature_demo.csv', `﻿${lines.join('\n')}`, 'text/csv;charset=utf-8');
+          download(L('nomenclature_demo.csv', 'bill_of_materials_demo.csv'), csv(rows), 'text/csv;charset=utf-8');
         }
         if (act === 'svg') {
           const svg = $('#fd-plan', el).cloneNode(true);

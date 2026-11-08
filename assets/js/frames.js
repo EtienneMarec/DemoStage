@@ -4,9 +4,10 @@
 'use strict';
 
 (() => {
-  const OBJECTS = { 1: 'Point', 2: 'Zone', 3: 'Système' };
-  const CODES = { 1: 'feu', 2: 'feu acquitté', 3: 'défaut', 4: 'défaut levé', 5: 'hors service', 6: 'remise en service' };
+  const OBJECTS = { 1: 'Point', 2: 'Zone', 3: L('Système', 'System') };
+  const CODES = { 1: L('feu', 'fire'), 2: L('feu acquitté', 'fire acknowledged'), 3: L('défaut', 'fault'), 4: L('défaut levé', 'fault cleared'), 5: L('hors service', 'disabled'), 6: L('remise en service', 're-enabled') };
   const LOOP_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+  const LOOP_WORD = L('Boucle', 'Loop');
   const TYPE_EVENT = 0x0101;
   const TYPE_ALIVE = 0x0102;
   const TYPE_NAMES = { [TYPE_EVENT]: 'EVENT', [TYPE_ALIVE]: 'ALIVE' };
@@ -48,10 +49,10 @@
     return { bytes: [h, ...body, ...chk, f], parts: { env: 1 + cfg.lenWidth + 4, pay: payload.length, chk: chk.length } };
   }
   function describeEvent(p) {
-    if (p.length < 11) return `${p.length} octets, événement incomplet`;
+    if (p.length < 11) return L(`${p.length} octets, événement incomplet`, `${p.length} bytes, incomplete event`);
     const point = (p[5] << 8) | p[6];
     const when = ((p[7] << 24) | (p[8] << 16) | (p[9] << 8) | p[10]) >>> 0;
-    const place = p[1] === 1 ? `CPU ${p[3]} / Boucle ${LOOP_LETTERS[p[4]] || '?'} / Point ${point}` : `${OBJECTS[p[1]] || 'Objet'} ${point}`;
+    const place = p[1] === 1 ? `CPU ${p[3]} / ${LOOP_WORD} ${LOOP_LETTERS[p[4]] || '?'} / Point ${point}` : `${OBJECTS[p[1]] || L('Objet', 'Object')} ${point}`;
     const time = new Date(when * 1000).toISOString().slice(11, 19);
     return `${CODES[p[2]] || `code ${p[2]}`} | ${place} | ${time} UTC`;
   }
@@ -87,22 +88,22 @@
       const off = cfg.lenWidth;
       const type = (body[off + 2] << 8) | body[off + 3];
       const payload = body.slice(off + 4);
-      let text = `${payload.length} octets : ${hexBytes(payload)}`;
+      let text = L(`${payload.length} octets : ${hexBytes(payload)}`, `${payload.length} bytes: ${hexBytes(payload)}`);
       if (type === TYPE_EVENT) text = describeEvent(payload);
-      if (type === TYPE_ALIVE) text = `état courant : ${payload[0] || 0} feu(x), ${payload[1] || 0} défaut(s)`;
-      addRow({ source, ok, src: body[off], dst: body[off + 1], len, type: `${TYPE_NAMES[type] || 'Inconnu'} (0x${hex(type, 4)})`, text, raw: frame });
+      if (type === TYPE_ALIVE) text = L(`état courant : ${payload[0] || 0} feu(x), ${payload[1] || 0} défaut(s)`, `current state: ${payload[0] || 0} fire(s), ${payload[1] || 0} fault(s)`);
+      addRow({ source, ok, src: body[off], dst: body[off + 1], len, type: `${TYPE_NAMES[type] || L('Inconnu', 'Unknown')} (0x${hex(type, 4)})`, text, raw: frame });
     }
   }
   function feedModbus(source, frame) {
-    if (frame.length < 4) { addRow({ source, ok: false, src: '–', dst: '–', len: frame.length, type: 'Trame courte', text: 'Trame Modbus incomplète', raw: frame }); return; }
+    if (frame.length < 4) { addRow({ source, ok: false, src: '–', dst: '–', len: frame.length, type: L('Trame courte', 'Short frame'), text: L('Trame Modbus incomplète', 'Incomplete Modbus frame'), raw: frame }); return; }
     const body = frame.slice(0, -2);
     const got = frame[frame.length - 2] | (frame[frame.length - 1] << 8);
     const ok = Checksums['CRC-16/MODBUS'](body).value === got;
-    const names = { 1: 'Lecture bobines', 2: 'Lecture entrées TOR', 3: 'Lecture registres', 4: 'Lecture registres d’entrée', 5: 'Écriture bobine', 6: 'Écriture registre' };
+    const names = { 1: L('Lecture bobines', 'Read coils'), 2: L('Lecture entrées TOR', 'Read discrete inputs'), 3: L('Lecture registres', 'Read holding registers'), 4: L('Lecture registres d’entrée', 'Read input registers'), 5: L('Écriture bobine', 'Write single coil'), 6: L('Écriture registre', 'Write single register') };
     const fn = frame[1];
-    let text = `${body.length - 2} octets de données`;
-    if (fn >= 1 && fn <= 4 && frame.length === 8) text = `lecture @0x${hex((frame[2] << 8) | frame[3], 4)} × ${(frame[4] << 8) | frame[5]}`;
-    addRow({ source, ok, src: '–', dst: frame[0], len: frame.length, type: `${names[fn] || 'Fonction'} (0x${hex(fn)})`, text, raw: frame });
+    let text = L(`${body.length - 2} octets de données`, `${body.length - 2} data bytes`);
+    if (fn >= 1 && fn <= 4 && frame.length === 8) text = `${L('lecture', 'read')} @0x${hex((frame[2] << 8) | frame[3], 4)} × ${(frame[4] << 8) | frame[5]}`;
+    addRow({ source, ok, src: '–', dst: frame[0], len: frame.length, type: `${names[fn] || L('Fonction', 'Function')} (0x${hex(fn)})`, text, raw: frame });
   }
   function feedAscii(source, bytes) {
     addRow({ source, ok: null, src: '–', dst: '–', len: bytes.length, type: 'ASCII', text: String.fromCharCode(...bytes), raw: bytes });
@@ -135,26 +136,27 @@
       const c = Checksums['CRC-16/MODBUS'](body).value;
       feed(state.sources[1], [...body, c & 0xff, c >> 8]);
     } else {
-      const msg = r.pick(['Essai de la liaison', 'Imprimante : prete', 'Test operateur']);
+      const msg = r.pick(L(['Essai de la liaison', 'Imprimante : prete', 'Test operateur'], ['Link test', 'Printer: ready', 'Operator test']));
       feed(state.sources[2], Array.from(msg, (ch) => ch.charCodeAt(0)));
     }
   }
+  const trafficLabel = (on) => (on ? L('Arrêter le trafic', 'Stop the traffic') : L('Démarrer le trafic', 'Start the traffic'));
   function setTraffic(on) {
     state.traffic = on;
     clearInterval(state.timer);
     state.timer = on ? setInterval(tick, 1000) : null;
     const b = host && $('#fr-traffic', host);
-    if (b) { b.textContent = on ? 'Arrêter le trafic' : 'Démarrer le trafic'; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }
+    if (b) { b.textContent = trafficLabel(on); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }
   }
 
   function renderPreview() {
     if (!host) return;
     const box = $('#fr-preview', host);
     const frame = buildFrame(eventPayload(state.ev));
-    if (!frame) { box.innerHTML = '<span class="cell-bad">En-tête ou pied invalide : deux caractères hexadécimaux attendus.</span>'; return; }
+    if (!frame) { box.innerHTML = `<span class="cell-bad">${L('En-tête ou pied invalide : deux caractères hexadécimaux attendus.', 'Invalid header or footer: two hexadecimal characters expected.')}</span>`; return; }
     const { bytes, parts } = frame;
     const seg = (cls, b, title) => `<span class="${cls}" title="${title}">${hexBytes(b)}</span>`;
-    box.innerHTML = seg('seg-env', bytes.slice(0, parts.env), 'Enveloppe') + seg('seg-pay', bytes.slice(parts.env, parts.env + parts.pay), 'Événement') + seg('seg-chk', bytes.slice(parts.env + parts.pay, parts.env + parts.pay + parts.chk), 'Contrôle') + seg('seg-env', bytes.slice(-1), 'Pied');
+    box.innerHTML = seg('seg-env', bytes.slice(0, parts.env), L('Enveloppe', 'Envelope')) + seg('seg-pay', bytes.slice(parts.env, parts.env + parts.pay), L('Événement', 'Event')) + seg('seg-chk', bytes.slice(parts.env + parts.pay, parts.env + parts.pay + parts.chk), L('Contrôle', 'Checksum')) + seg('seg-env', bytes.slice(-1), L('Pied', 'Footer'));
     $('#fr-decoded', host).textContent = describeEvent(eventPayload(state.ev));
     if (!state.inject) $('#fr-inject', host).placeholder = hexBytes(bytes);
   }
@@ -166,7 +168,7 @@
       <td><span class="source-dot" style="background:${SOURCE_COLORS[state.sources.indexOf(x.source)]}"></span>${esc(x.source.name)}</td>
       <td>${x.ok === null ? '–' : x.ok ? '<span class="pill ok">OK</span>' : '<span class="pill bad">KO</span>'}</td>
       <td>${esc(x.src)}</td><td>${esc(x.dst)}</td><td class="num">${x.len}</td><td>${esc(x.type)}</td><td>${esc(x.text)}</td><td>${hexBytes(x.raw)}</td></tr>`).join('');
-    $('#fr-count', host).textContent = `${rows.length} trame(s)`;
+    $('#fr-count', host).textContent = L(`${rows.length} trame(s)`, `${rows.length} frame(s)`);
   }
   const opts = (map, cur) => Object.entries(map).map(([k, v]) => `<option value="${k}" ${String(cur) === String(k) ? 'selected' : ''}>${v}</option>`).join('');
 
@@ -176,63 +178,63 @@
       host = el;
       const { cfg, ev } = state;
       el.innerHTML = `<header class="page-head">
-        <div class="kicker">Outil de test · C#, WPF, liaison série</div>
+        <div class="kicker">${L('Outil de test · C#, WPF, liaison série', 'Test tool · C#, WPF, serial link')}</div>
         <h1>FoxFrameGenerator</h1>
-        <p>Un collègue devait tester le firmware d’un écran sans disposer de la carte de traitement. Cet outil simule la centrale : il forge et envoie des trames sur un port série, puis écoute plusieurs ports à la fois, reconstitue les trames et les décode en clair.</p>
+        <p>${L('Un collègue devait tester le firmware d’un écran sans disposer de la carte de traitement. Cet outil simule la centrale : il forge et envoie des trames sur un port série, puis écoute plusieurs ports à la fois, reconstitue les trames et les décode en clair.', 'A colleague needed to test a display’s firmware without having the processing board. This tool simulates the panel: it builds and sends frames on a serial port, then listens on several ports at once, reassembles the frames and decodes them into plain text.')}</p>
       </header>
-      ${simBanner('Le port série est virtuel, et l’enveloppe comme la structure des événements sont inventées. Le protocole réel n’est pas publié. Modbus RTU, lui, est conforme au standard.')}
+      ${simBanner(L('Le port série est virtuel, et l’enveloppe comme la structure des événements sont inventées. Le protocole réel n’est pas publié. Modbus RTU, lui, est conforme au standard.', 'The serial port is virtual, and both the envelope and the event structure are made up. The real protocol is not published. Modbus RTU, however, follows the standard.'))}
       <div class="stack">
         <div class="grid two">
           <section class="card">
-            <h3>Construire un événement</h3>
+            <h3>${L('Construire un événement', 'Build an event')}</h3>
             <div class="form-grid">
-              <label class="field">Objet<select data-ev="obj">${opts(OBJECTS, ev.obj)}</select></label>
-              <label class="field">Événement<select data-ev="code">${opts(CODES, ev.code)}</select></label>
+              <label class="field">${L('Objet', 'Object')}<select data-ev="obj">${opts(OBJECTS, ev.obj)}</select></label>
+              <label class="field">${L('Événement', 'Event')}<select data-ev="code">${opts(CODES, ev.code)}</select></label>
               <label class="field">CPU<select data-ev="cpu">${opts({ 1: 1, 2: 2, 3: 3, 4: 4 }, ev.cpu)}</select></label>
-              <label class="field">Boucle<select data-ev="loop">${opts(Object.fromEntries(LOOP_LETTERS.map((l, i) => [i, l])), ev.loop)}</select></label>
+              <label class="field">${LOOP_WORD}<select data-ev="loop">${opts(Object.fromEntries(LOOP_LETTERS.map((l, i) => [i, l])), ev.loop)}</select></label>
               <label class="field">Point<input data-ev="point" type="number" min="1" max="126" value="${ev.point}"></label>
             </div>
-            <p class="note" style="margin:10px 0 0">Décodé : <span id="fr-decoded" class="mono"></span></p>
+            <p class="note" style="margin:10px 0 0">${L('Décodé :', 'Decoded:')} <span id="fr-decoded" class="mono"></span></p>
           </section>
           <section class="card">
-            <h3>Enveloppe paramétrable</h3>
+            <h3>${L('Enveloppe paramétrable', 'Configurable envelope')}</h3>
             <div class="form-grid">
-              <label class="field">En-tête (hex)<input data-cfg="header" value="${esc(cfg.header)}" maxlength="2"></label>
-              <label class="field">Pied (hex)<input data-cfg="footer" value="${esc(cfg.footer)}" maxlength="2"></label>
-              <label class="field">Longueur<select data-cfg="lenWidth">${opts({ 1: '1 octet', 2: '2 octets' }, cfg.lenWidth)}</select></label>
-              <label class="field">Contrôle<select data-cfg="check">${opts(Object.fromEntries(Object.keys(Checksums).map((k) => [k, k])), cfg.check)}</select></label>
-              <label class="field">Émetteur<input data-cfg="src" type="number" min="0" max="255" value="${cfg.src}"></label>
-              <label class="field">Destinataire<input data-cfg="dst" type="number" min="0" max="255" value="${cfg.dst}"></label>
+              <label class="field">${L('En-tête (hex)', 'Header (hex)')}<input data-cfg="header" value="${esc(cfg.header)}" maxlength="2"></label>
+              <label class="field">${L('Pied (hex)', 'Footer (hex)')}<input data-cfg="footer" value="${esc(cfg.footer)}" maxlength="2"></label>
+              <label class="field">${L('Longueur', 'Length')}<select data-cfg="lenWidth">${opts({ 1: L('1 octet', '1 byte'), 2: L('2 octets', '2 bytes') }, cfg.lenWidth)}</select></label>
+              <label class="field">${L('Contrôle', 'Checksum')}<select data-cfg="check">${opts(Object.fromEntries(Object.keys(Checksums).map((k) => [k, k])), cfg.check)}</select></label>
+              <label class="field">${L('Émetteur', 'Sender')}<input data-cfg="src" type="number" min="0" max="255" value="${cfg.src}"></label>
+              <label class="field">${L('Destinataire', 'Recipient')}<input data-cfg="dst" type="number" min="0" max="255" value="${cfg.dst}"></label>
             </div>
           </section>
         </div>
         <section class="card">
-          <h3>Trame générée</h3>
+          <h3>${L('Trame générée', 'Generated frame')}</h3>
           <div id="fr-preview" class="frame-preview"></div>
           <div class="legend" style="justify-content:flex-start;margin:8px 0 12px">
-            <span><i class="seg-env" style="border-color:var(--line)"></i>Enveloppe</span>
-            <span><i class="seg-pay" style="border-color:var(--accent)"></i>Événement</span>
-            <span><i class="seg-chk" style="border-color:var(--warn)"></i>Contrôle</span>
+            <span><i class="seg-env" style="border-color:var(--line)"></i>${L('Enveloppe', 'Envelope')}</span>
+            <span><i class="seg-pay" style="border-color:var(--accent)"></i>${L('Événement', 'Event')}</span>
+            <span><i class="seg-chk" style="border-color:var(--warn)"></i>${L('Contrôle', 'Checksum')}</span>
           </div>
           <div class="btn-row">
-            <button class="btn primary" id="fr-send">Envoyer sur le port virtuel</button>
-            <button class="btn" id="fr-traffic" aria-pressed="false">Démarrer le trafic</button>
+            <button class="btn primary" id="fr-send">${L('Envoyer sur le port virtuel', 'Send on the virtual port')}</button>
+            <button class="btn" id="fr-traffic" aria-pressed="false">${trafficLabel(false)}</button>
             <span class="spacer"></span>
-            <input id="fr-inject" aria-label="Trame à injecter en hexadécimal" style="flex:1;min-width:220px;font-family:var(--mono)" value="${esc(state.inject)}">
-            <button class="btn" id="fr-inject-go">Injecter ces octets</button>
+            <input id="fr-inject" aria-label="${L('Trame à injecter en hexadécimal', 'Frame to inject, in hexadecimal')}" style="flex:1;min-width:220px;font-family:var(--mono)" value="${esc(state.inject)}">
+            <button class="btn" id="fr-inject-go">${L('Injecter ces octets', 'Inject these bytes')}</button>
           </div>
-          <p class="note" style="margin:8px 0 0">L’injection passe par la même chaîne de décodage, sans matériel. Essayez de modifier un octet : la trame passe en KO. Remplacez un octet de données par l’en-tête : la trame reste délimitée correctement.</p>
+          <p class="note" style="margin:8px 0 0">${L('L’injection passe par la même chaîne de décodage, sans matériel. Essayez de modifier un octet : la trame passe en KO. Remplacez un octet de données par l’en-tête : la trame reste délimitée correctement.', 'Injection goes through the same decoding chain, without hardware. Try changing a byte: the frame turns KO. Set a data byte to the header value: the frame is still delimited correctly.')}</p>
         </section>
         <section class="card">
           <div class="btn-row" style="margin-bottom:10px">
-            <h3>Réception : flux fusionné</h3>
+            <h3>${L('Réception : flux fusionné', 'Reception: merged stream')}</h3>
             <span class="spacer"></span>
             ${state.sources.map((s, i) => `<label class="check"><input type="checkbox" data-src="${i}" ${s.on ? 'checked' : ''}><span class="source-dot" style="background:${SOURCE_COLORS[i]};margin:0"></span>${esc(s.name)} <small>${{ demo: 'DEMO', modbus: 'Modbus RTU', ascii: 'ASCII' }[s.proto]}</small></label>`).join('')}
             <span class="note" id="fr-count"></span>
-            <button class="btn" id="fr-log">Journal CSV</button>
-            <button class="btn" id="fr-clear">Effacer</button>
+            <button class="btn" id="fr-log">${L('Journal CSV', 'CSV log')}</button>
+            <button class="btn" id="fr-clear">${L('Effacer', 'Clear')}</button>
           </div>
-          <div class="table-wrap frame-table"><table class="data"><thead><tr><th>Heure</th><th>Source</th><th>Contrôle</th><th>Ém.</th><th>Dest.</th><th class="num">Long.</th><th>Type</th><th>Contenu décodé</th><th>Trame brute</th></tr></thead><tbody id="fr-rows"></tbody></table></div>
+          <div class="table-wrap frame-table"><table class="data"><thead><tr><th>${L('Heure', 'Time')}</th><th>Source</th><th>${L('Contrôle', 'Check')}</th><th>${L('Ém.', 'From')}</th><th>${L('Dest.', 'To')}</th><th class="num">${L('Long.', 'Len.')}</th><th>Type</th><th>${L('Contenu décodé', 'Decoded content')}</th><th>${L('Trame brute', 'Raw frame')}</th></tr></thead><tbody id="fr-rows"></tbody></table></div>
         </section>
       </div>`;
       $$('[data-ev]', el).forEach((i) => i.addEventListener('input', () => {
@@ -247,7 +249,7 @@
       }));
       $('#fr-send', el).addEventListener('click', () => {
         const f = buildFrame(eventPayload(ev));
-        if (!f) { toast('Enveloppe invalide.', 'bad'); return; }
+        if (!f) { toast(L('Enveloppe invalide.', 'Invalid envelope.'), 'bad'); return; }
         feed(state.sources[0], f.bytes);
       });
       $('#fr-traffic', el).addEventListener('click', () => setTraffic(!state.traffic));
@@ -256,17 +258,17 @@
         const input = $('#fr-inject', el);
         const text = (input.value || input.placeholder).trim();
         const tokens = text.split(/\s+/);
-        if (!tokens.every((t) => /^[0-9a-f]{2}$/i.test(t))) { toast('Saisissez des octets hexadécimaux séparés par des espaces.', 'bad'); return; }
+        if (!tokens.every((t) => /^[0-9a-f]{2}$/i.test(t))) { toast(L('Saisissez des octets hexadécimaux séparés par des espaces.', 'Enter hexadecimal bytes separated by spaces.'), 'bad'); return; }
         const before = state.rows.length;
         feed(state.sources[0], tokens.map((t) => parseInt(t, 16)));
-        if (state.rows.length === before) toast('Aucune trame complète trouvée dans ces octets : le dé-trameur attend la suite.');
+        if (state.rows.length === before) toast(L('Aucune trame complète trouvée dans ces octets : le dé-trameur attend la suite.', 'No complete frame found in these bytes: the deframer is waiting for the rest.'));
       });
       $$('[data-src]', el).forEach((c) => c.addEventListener('change', () => { state.sources[Number(c.dataset.src)].on = c.checked; renderRows(); }));
       $('#fr-clear', el).addEventListener('click', () => { state.rows = []; renderRows(); });
       $('#fr-log', el).addEventListener('click', () => {
-        const lines = ['heure;source;controle;type;contenu;trame'];
-        state.rows.forEach((x) => lines.push([x.time.toISOString(), x.source.name, x.ok === null ? '' : x.ok ? 'OK' : 'KO', x.type, x.text, hexBytes(x.raw)].join(';')));
-        download('journal_trames_demo.csv', `﻿${lines.join('\n')}`, 'text/csv;charset=utf-8');
+        const rows = [L(['heure', 'source', 'controle', 'type', 'contenu', 'trame'], ['time', 'source', 'check', 'type', 'content', 'frame'])];
+        state.rows.forEach((x) => rows.push([x.time.toISOString(), x.source.name, x.ok === null ? '' : x.ok ? 'OK' : 'KO', x.type, x.text, hexBytes(x.raw)]));
+        download(L('journal_trames_demo.csv', 'frame_log_demo.csv'), csv(rows), 'text/csv;charset=utf-8');
       });
       renderPreview();
       renderRows();

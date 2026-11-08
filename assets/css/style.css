@@ -360,6 +360,9 @@ svg.plan.pan { cursor: grab; }
   body.nav-open #nav { display: block; }
   .grid.two, .grid.three, .fox-layout, .fd-layout { grid-template-columns: minmax(0, 1fr); }
   .brand small { display: none; }
+  .topbar { gap: 6px; padding: 0 10px; }
+  .topbar .btn { padding: 4px 7px; font-size: 12.5px; }
+  .brand { font-size: 13.5px; gap: 6px; }
   .timeline div { grid-template-columns: 76px minmax(0, 1fr); }
   .shot-grid { grid-template-columns: minmax(0, 1fr); }
 }

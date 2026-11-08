@@ -1,7 +1,23 @@
-/* Socle de la démo : utilitaires, routeur, thème, algorithmes publics.
+/* Socle de la démo : langue, utilitaires, routeur, thème, algorithmes publics.
    Tout le code de ce dépôt a été écrit pour la démo : il ne reprend aucun
    fichier des applications livrées à l'entreprise. */
 'use strict';
+
+/* Langue : paramètre ?lang= de l'URL, sinon choix mémorisé, sinon langue du
+   navigateur. Changer de langue recharge la page, ce qui régénère les données
+   fictives dans la nouvelle langue. */
+const LANG = (() => {
+  const param = new URLSearchParams(location.search).get('lang');
+  if (param === 'fr' || param === 'en') return param;
+  try {
+    const saved = localStorage.getItem('demo-lang');
+    if (saved === 'fr' || saved === 'en') return saved;
+  } catch (e) { /* stockage indisponible */ }
+  return (navigator.language || 'en').toLowerCase().startsWith('fr') ? 'fr' : 'en';
+})();
+const L = (fr, en) => (LANG === 'en' ? en : fr);
+const LOCALE = L('fr-FR', 'en-GB');
+document.documentElement.lang = LANG;
 
 const App = { pages: {}, current: null, shared: {} };
 
@@ -13,7 +29,17 @@ const pad = (n, w = 2) => String(n).padStart(w, '0');
 const hex = (n, w = 2) => Number(n).toString(16).toUpperCase().padStart(w, '0');
 const hexBytes = (b) => Array.from(b, (x) => hex(x)).join(' ');
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-const nf = (n, d = 0) => Number(n).toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const nf = (n, d = 0) => Number(n).toLocaleString(LOCALE, { minimumFractionDigits: d, maximumFractionDigits: d });
+
+/* CSV ouvrable dans Excel : point-virgule en français, virgule en anglais. */
+function csv(rows) {
+  const sep = L(';', ',');
+  const cell = (v) => {
+    const s = String(v ?? '');
+    return /[";,\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  return `﻿${rows.map((r) => r.map(cell).join(sep)).join('\n')}`;
+}
 
 /* Générateur pseudo-aléatoire déterministe : les jeux de données fictifs sont
    identiques à chaque visite. */
@@ -49,8 +75,8 @@ const Checksums = {
     }
     return { value: c, size: 2 };
   },
-  'Somme 8 bits': (data) => ({ value: data.reduce((s, b) => (s + b) & 0xff, 0), size: 1 }),
-  'XOR 8 bits': (data) => ({ value: data.reduce((s, b) => s ^ b, 0), size: 1 }),
+  [L('Somme 8 bits', '8-bit sum')]: (data) => ({ value: data.reduce((s, b) => (s + b) & 0xff, 0), size: 1 }),
+  [L('XOR 8 bits', '8-bit XOR')]: (data) => ({ value: data.reduce((s, b) => s ^ b, 0), size: 1 }),
 };
 
 function toast(message, kind = 'info') {
@@ -106,16 +132,17 @@ const Tip = {
 };
 
 /* Routeur et navigation */
+const SITE = L('Démo de stage', 'Internship demo');
 const NAV = [
-  { id: 'home', label: 'Vue d’ensemble', group: '' },
-  { id: 'foxsoft', label: 'FOX_Soft', tag: 'Projet principal', group: 'Démos interactives' },
-  { id: 'binviz', label: 'FoxBinVisualizer', tag: 'Format binaire', group: 'Démos interactives' },
-  { id: 'frames', label: 'FoxFrameGenerator', tag: 'Trames série', group: 'Démos interactives' },
-  { id: 'alarms', label: 'Analyseur d’alarmes', tag: 'Journaux', group: 'Démos interactives' },
-  { id: 'fleet', label: 'PhoenixConfigAnalizer', tag: 'Flotte', group: 'Démos interactives' },
-  { id: 'firedeck', label: 'FireDeck', tag: 'Devis sur plan', group: 'Démos interactives' },
-  { id: 'method', label: 'Méthode & bilan', group: 'Le stage' },
-  { id: 'scope', label: 'Ce qui est masqué', group: 'Le stage' },
+  { id: 'home', label: L('Vue d’ensemble', 'Overview'), group: '' },
+  { id: 'foxsoft', label: 'FOX_Soft', tag: L('Projet principal', 'Main project'), group: L('Démos interactives', 'Interactive demos') },
+  { id: 'binviz', label: 'FoxBinVisualizer', tag: L('Format binaire', 'Binary format'), group: L('Démos interactives', 'Interactive demos') },
+  { id: 'frames', label: 'FoxFrameGenerator', tag: L('Trames série', 'Serial frames'), group: L('Démos interactives', 'Interactive demos') },
+  { id: 'alarms', label: L('Analyseur d’alarmes', 'Alarm log analyser'), tag: L('Journaux', 'Logs'), group: L('Démos interactives', 'Interactive demos') },
+  { id: 'fleet', label: 'PhoenixConfigAnalizer', tag: L('Flotte', 'Fleet'), group: L('Démos interactives', 'Interactive demos') },
+  { id: 'firedeck', label: 'FireDeck', tag: L('Devis sur plan', 'Quotes on plans'), group: L('Démos interactives', 'Interactive demos') },
+  { id: 'method', label: L('Méthode & bilan', 'Method & results'), group: L('Le stage', 'The internship') },
+  { id: 'scope', label: L('Ce qui est masqué', 'What is hidden'), group: L('Le stage', 'The internship') },
 ];
 
 function renderNav(active) {
@@ -142,7 +169,7 @@ function route() {
   main.innerHTML = '';
   page.mount(main);
   App.current = page;
-  document.title = `${page.title} · Démo de stage`;
+  document.title = `${page.title} · ${SITE}`;
   renderNav(key);
   document.body.classList.remove('nav-open');
   window.scrollTo(0, 0);
@@ -156,7 +183,7 @@ function initTheme() {
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   const sync = () => {
     const isDark = document.documentElement.dataset.theme === 'dark';
-    $('#theme').textContent = isDark ? 'Thème clair' : 'Thème sombre';
+    $('#theme').textContent = isDark ? L('Thème clair', 'Light theme') : L('Thème sombre', 'Dark theme');
   };
   sync();
   $('#theme').addEventListener('click', () => {
@@ -168,7 +195,27 @@ function initTheme() {
   });
 }
 
+function initLang() {
+  $('#brand-title').textContent = SITE;
+  $('#skip').textContent = L('Aller au contenu', 'Skip to content');
+  $('#burger').textContent = L('Menu', 'Menu');
+  $('#burger').setAttribute('aria-label', L('Ouvrir le menu', 'Open the menu'));
+  $('#nav').setAttribute('aria-label', L('Sections de la démo', 'Demo sections'));
+  const b = $('#lang');
+  b.textContent = L('English', 'Français');
+  b.setAttribute('lang', L('en', 'fr'));
+  b.setAttribute('aria-label', L('Afficher la démo en anglais', 'Show the demo in French'));
+  b.addEventListener('click', () => {
+    const next = L('en', 'fr');
+    try { localStorage.setItem('demo-lang', next); } catch (e) { /* idem */ }
+    const url = new URL(location.href);
+    url.searchParams.set('lang', next);
+    location.href = url.toString();
+  });
+}
+
 window.addEventListener('DOMContentLoaded', () => {
+  initLang();
   initTheme();
   $('#burger').addEventListener('click', () => document.body.classList.toggle('nav-open'));
   window.addEventListener('hashchange', route);

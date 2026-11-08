@@ -13,25 +13,27 @@ const CE = (() => {
   const slash = '<path d="M-14-12 14 12" stroke="#10202e" stroke-width="2.2"/>';
   const clock = '<circle r="11" fill="#fff" stroke="#10202e" stroke-width="2"/><path d="M0-7v7l5 3" stroke="#10202e" stroke-width="2" fill="none" stroke-linecap="round"/>';
   const pulse = '<rect x="-12" y="-10" width="24" height="20" rx="3" fill="#fff" stroke="#10202e" stroke-width="2"/><path d="M-9 3h4v-7h4v7h4v-7h4v7" stroke="#10202e" stroke-width="1.8" fill="none"/>';
-  const horn = '<path d="M-9-4h5l9-7v22l-9-7h-5z" transform="translate(0 -0)" fill="#fff" stroke="#10202e" stroke-width="2" stroke-linejoin="round"/><path d="M8-5q4 5 0 10" stroke="#10202e" stroke-width="2" fill="none"/>';
+  const horn = '<path d="M-9-4h5l9-7v22l-9-7h-5z" fill="#fff" stroke="#10202e" stroke-width="2" stroke-linejoin="round"/><path d="M8-5q4 5 0 10" stroke="#10202e" stroke-width="2" fill="none"/>';
   const relay = '<path d="M-10 3h5l8-7M4 3h6" stroke="#10202e" stroke-width="2.2" fill="none" stroke-linecap="round"/>';
   const msg = '<rect x="-12" y="-9" width="24" height="18" rx="2" fill="#fff" stroke="#10202e" stroke-width="2"/><path d="M-7-3h14M-7 3h9" stroke="#10202e" stroke-width="1.8"/>';
 
-  /* kind : cause | func | effect | hlink | vlink */
+  const ZONE_OR_POINT = L('Zone ou point', 'Zone or point');
+  /* kind : cause | func | effect | hlink | vlink ; group : cause | func | effect */
   const TOOLS = {
-    fire: { label: 'Feu', kind: 'cause', group: 'Causes', icon: flame(), needs: 'Zone ou point' },
-    fault: { label: 'Défaut', kind: 'cause', group: 'Causes', icon: triangle('#d9720a', bang), needs: 'Zone ou point' },
-    disable: { label: 'Hors service', kind: 'cause', group: 'Causes', icon: triangle('#10202e', cross), needs: 'Zone ou point' },
-    tech: { label: 'Alarme technique', kind: 'cause', group: 'Causes', icon: '<circle r="10" fill="#fff" stroke="#c99400" stroke-width="2.6"/><circle r="4" fill="#c99400"/>', needs: 'Point' },
-    nofire: { label: 'Pas de feu', kind: 'cause', group: 'Causes', icon: flame() + slash, negated: true, needs: 'Zone ou point' },
-    hlink: { label: 'Liaison horizontale', kind: 'hlink', group: 'Fonctions', icon: '<path d="M-13 0H13" stroke="#10202e" stroke-width="2.4"/>' },
-    vlink: { label: 'Liaison verticale (OU)', kind: 'vlink', group: 'Fonctions', icon: '<path d="M-13-5H13M0-5V12" stroke="#10202e" stroke-width="2.4"/>' },
-    timer: { label: 'Temporisation', kind: 'func', group: 'Fonctions', icon: clock, needs: 'Durée' },
-    flash: { label: 'Relais clignotant', kind: 'func', group: 'Fonctions', icon: pulse },
-    sounder: { label: 'Sirène', kind: 'effect', group: 'Effets', icon: horn, needs: 'Groupe' },
-    output: { label: 'Sortie programmable', kind: 'effect', group: 'Effets', icon: relay, needs: 'Sortie' },
-    message: { label: 'Message affiché', kind: 'effect', group: 'Effets', icon: msg, needs: 'Message' },
+    fire: { label: L('Feu', 'Fire'), kind: 'cause', group: 'cause', icon: flame(), needs: ZONE_OR_POINT },
+    fault: { label: L('Défaut', 'Fault'), kind: 'cause', group: 'cause', icon: triangle('#d9720a', bang), needs: ZONE_OR_POINT },
+    disable: { label: L('Hors service', 'Disablement'), kind: 'cause', group: 'cause', icon: triangle('#10202e', cross), needs: ZONE_OR_POINT },
+    tech: { label: L('Alarme technique', 'Technical alarm'), kind: 'cause', group: 'cause', icon: '<circle r="10" fill="#fff" stroke="#c99400" stroke-width="2.6"/><circle r="4" fill="#c99400"/>', needs: 'Point' },
+    nofire: { label: L('Pas de feu', 'No fire'), kind: 'cause', group: 'cause', icon: flame() + slash, negated: true, needs: ZONE_OR_POINT },
+    hlink: { label: L('Liaison horizontale', 'Horizontal link'), kind: 'hlink', group: 'func', icon: '<path d="M-13 0H13" stroke="#10202e" stroke-width="2.4"/>' },
+    vlink: { label: L('Liaison verticale (OU)', 'Vertical link (OR)'), kind: 'vlink', group: 'func', icon: '<path d="M-13-5H13M0-5V12" stroke="#10202e" stroke-width="2.4"/>' },
+    timer: { label: L('Temporisation', 'Timer'), kind: 'func', group: 'func', icon: clock, needs: L('Durée', 'Delay') },
+    flash: { label: L('Relais clignotant', 'Flashing relay'), kind: 'func', group: 'func', icon: pulse },
+    sounder: { label: L('Sirène', 'Sounder'), kind: 'effect', group: 'effect', icon: horn, needs: L('Groupe', 'Group') },
+    output: { label: L('Sortie programmable', 'Programmable output'), kind: 'effect', group: 'effect', icon: relay, needs: L('Sortie', 'Output') },
+    message: { label: L('Message affiché', 'Displayed message'), kind: 'effect', group: 'effect', icon: msg, needs: 'Message' },
   };
+  const GROUPS = { cause: 'Causes', func: L('Fonctions', 'Functions'), effect: L('Effets', 'Effects') };
 
   const emptyGrid = () => Array.from({ length: ROWS }, () => Array(COLS).fill(null));
 
@@ -88,7 +90,7 @@ const CE = (() => {
   /* Les liaisons verticales descendent sur la case du dessous : on y prolonge le trait. */
   function gridHtml(grid, opts = {}) {
     const { lit, selected } = opts;
-    let html = `<div class="ce-grid ${opts.static ? 'static' : ''}" role="grid" aria-label="Grille Cause and Effects">`;
+    let html = `<div class="ce-grid ${opts.static ? 'static' : ''}" role="grid" aria-label="${L('Grille Cause & Effects', 'Cause & Effects grid')}">`;
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         const cell = grid[r][c];
@@ -102,8 +104,8 @@ const CE = (() => {
           const live = lit && lit[r - 1][c];
           inner += `<svg viewBox="0 0 100 84" preserveAspectRatio="none" aria-hidden="true"><path class="ce-wire ${live ? 'live' : ''}" vector-effect="non-scaling-stroke" d="M50 0V36"/></svg>`;
         }
-        const label = cell ? TOOLS[cell.tool].label + (cell.param ? ` ${cell.param}` : '') : 'Case vide';
-        html += `<div class="ce-cell ${cell ? 'used' : ''} ${isSel ? 'selected' : ''}" role="gridcell" data-r="${r}" data-c="${c}" aria-label="Ligne ${r + 1}, colonne ${c + 1} : ${esc(label)}">${inner}</div>`;
+        const label = cell ? TOOLS[cell.tool].label + (cell.param ? ` ${cell.param}` : '') : L('Case vide', 'Empty cell');
+        html += `<div class="ce-cell ${cell ? 'used' : ''} ${isSel ? 'selected' : ''}" role="gridcell" data-r="${r}" data-c="${c}" aria-label="${L(`Ligne ${r + 1}, colonne ${c + 1} : `, `Row ${r + 1}, column ${c + 1}: `)}${esc(label)}">${inner}</div>`;
       }
     }
     return `${html}</div>`;
@@ -133,13 +135,13 @@ const CE = (() => {
     const found = [];
     const has = (k) => grid.flat().some((cell) => cell && TOOLS[cell.tool].kind === k);
     if (!grid.flat().some(Boolean)) return found;
-    if (!has('cause')) found.push('aucune cause');
-    if (!has('effect')) found.push('aucun effet');
+    if (!has('cause')) found.push(L('aucune cause', 'no cause'));
+    if (!has('effect')) found.push(L('aucun effet', 'no effect'));
     grid.forEach((row) => row.forEach((cell) => {
-      if (cell && TOOLS[cell.tool].needs && !cell.param) found.push(`« ${TOOLS[cell.tool].label} » sans paramètre`);
+      if (cell && TOOLS[cell.tool].needs && !cell.param) found.push(L(`« ${TOOLS[cell.tool].label} » sans paramètre`, `"${TOOLS[cell.tool].label}" has no parameter`));
     }));
     return found;
   }
 
-  return { ROWS, COLS, TOOLS, emptyGrid, evaluate, gridHtml, signature, issues };
+  return { ROWS, COLS, TOOLS, GROUPS, emptyGrid, evaluate, gridHtml, signature, issues };
 })();

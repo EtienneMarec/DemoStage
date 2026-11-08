@@ -8,10 +8,18 @@
   const DAY = 24 * HOUR;
   const T0 = Date.UTC(2026, 2, 1);
   const SPAN = 30 * DAY;
-  const ROOMS = ['Passerelle', 'Coursive A', 'Coursive B', 'Cabine 101', 'Cabine 102', 'Cabine 103', 'Cuisine', 'Salon', 'Machine', 'Local groupe', 'Atelier', 'Cale avant', 'Cale arrière', 'Local CO2', 'Infirmerie', 'Magasin'];
+  const ROOMS = L(
+    ['Passerelle', 'Coursive A', 'Coursive B', 'Cabine 101', 'Cabine 102', 'Cabine 103', 'Cuisine', 'Salon', 'Machine', 'Local groupe', 'Atelier', 'Cale avant', 'Cale arrière', 'Local CO2', 'Infirmerie', 'Magasin'],
+    ['Bridge', 'Corridor A', 'Corridor B', 'Cabin 101', 'Cabin 102', 'Cabin 103', 'Galley', 'Lounge', 'Engine room', 'Generator room', 'Workshop', 'Forward hold', 'Aft hold', 'CO2 room', 'Infirmary', 'Store'],
+  );
+  const WORKSHOP = L('Atelier', 'Workshop');
+  const FORGOTTEN_ROOM = L('Cabine 103', 'Cabin 103');
+  const POWER_FAULT = L('Défaut alimentation', 'Power supply fault');
   const OPERATOR = new Set(['fire', 'fault', 'system']);
-  const fmtDate = (t) => { const d = new Date(t); return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`; };
-  const fmtDur = (ms) => { if (ms < HOUR) return `${Math.round(ms / MIN)} min`; if (ms < DAY) return `${nf(ms / HOUR, 1)} h`; return `${nf(ms / DAY, 1)} j`; };
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const fmtDay = (d) => L(`${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}`, `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`);
+  const fmtDate = (t) => { const d = new Date(t); return `${fmtDay(d)} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`; };
+  const fmtDur = (ms) => { if (ms < HOUR) return `${Math.round(ms / MIN)} min`; if (ms < DAY) return `${nf(ms / HOUR, 1)} h`; return `${nf(ms / DAY, 1)} ${L('j', 'd')}`; };
 
   function generate(seed, after) {
     const r = rng(seed);
@@ -42,8 +50,9 @@
     /* Tests de zone hebdomadaires */
     for (let w = 0; w < 4; w++) {
       const t = T0 + (w * 7 + 2) * DAY + 9 * HOUR;
-      push(t, `ZONE${pad(w + 1)}`, 'test', 'TEST_ON', `Test zone ${w + 1}`);
-      push(t + 25 * MIN, `ZONE${pad(w + 1)}`, 'test', 'TEST_OFF', `Test zone ${w + 1}`);
+      const desc = L(`Test zone ${w + 1}`, `Zone ${w + 1} test`);
+      push(t, `ZONE${pad(w + 1)}`, 'test', 'TEST_ON', desc);
+      push(t + 25 * MIN, `ZONE${pad(w + 1)}`, 'test', 'TEST_OFF', desc);
     }
     /* Rafales : une perte d'alimentation et un défaut de boucle */
     const floods = after ? [{ day: 6, size: 16, dur: 40 }] : [{ day: 6, size: 190, dur: 26 }, { day: 19, size: 64, dur: 16 }];
@@ -53,9 +62,9 @@
         const t = start + r() * dur * MIN;
         if (i % 6 === 0) {
           const s = `SYS${pad(r.int(1, 8))}`;
-          push(t, s, 'system', 'ACT', 'Défaut alimentation');
-          push(t + r.int(5, 40) * MIN, s, 'system', 'ACK', 'Défaut alimentation');
-          push(t + r.int(40, 120) * MIN, s, 'system', 'CLR', 'Défaut alimentation');
+          push(t, s, 'system', 'ACT', POWER_FAULT);
+          push(t + r.int(5, 40) * MIN, s, 'system', 'ACK', POWER_FAULT);
+          push(t + r.int(40, 120) * MIN, s, 'system', 'CLR', POWER_FAULT);
         } else fault(t, r.int(1, 30), r.int(2, 40) * MIN, r.int(30, 150) * MIN);
       }
     });
@@ -71,15 +80,15 @@
       /* Une zone inhibée en boucle et une inhibition oubliée */
       for (let i = 0; i < 34; i++) {
         const t = T0 + r() * (SPAN - DAY);
-        push(t, 'INH_036', 'inhibit', 'INH_ON', 'Atelier');
-        push(t + r.int(5, 90) * MIN, 'INH_036', 'inhibit', 'INH_OFF', 'Atelier');
+        push(t, 'INH_036', 'inhibit', 'INH_ON', WORKSHOP);
+        push(t + r.int(5, 90) * MIN, 'INH_036', 'inhibit', 'INH_OFF', WORKSHOP);
       }
-      push(T0 + 21 * DAY + 16 * HOUR, 'INH_051', 'inhibit', 'INH_ON', 'Cabine 103');
+      push(T0 + 21 * DAY + 16 * HOUR, 'INH_051', 'inhibit', 'INH_ON', FORGOTTEN_ROOM);
     } else {
       for (let i = 0; i < 4; i++) {
         const t = T0 + r() * (SPAN - DAY);
-        push(t, 'INH_036', 'inhibit', 'INH_ON', 'Atelier');
-        push(t + 30 * MIN, 'INH_036', 'inhibit', 'INH_OFF', 'Atelier');
+        push(t, 'INH_036', 'inhibit', 'INH_ON', WORKSHOP);
+        push(t + 30 * MIN, 'INH_036', 'inhibit', 'INH_OFF', WORKSHOP);
       }
     }
     return ev.sort((a, b) => a.t - b.t);
@@ -207,10 +216,11 @@
       const v = b.fire + b.fault + b.inhibit + b.test;
       if (!v) return '';
       const h = Math.max(3, Math.sqrt(v / max) * (H - 4));
-      return `<rect x="${(i * w + 1).toFixed(1)}" y="${H - h}" width="${(w - 2).toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" fill="${col[b.rank] || 'var(--muted)'}" data-t="${b.t}" data-tip="${esc(`${fmtDate(T0 + (i / n) * SPAN)} · ${b.fire} feu(x), ${b.fault} défaut(s), ${b.inhibit} inhibition(s), ${b.test} test(s)`)}"/>`;
+      const tip = L(`${fmtDate(T0 + (i / n) * SPAN)} · ${b.fire} feu(x), ${b.fault} défaut(s), ${b.inhibit} inhibition(s), ${b.test} test(s)`, `${fmtDate(T0 + (i / n) * SPAN)} · ${b.fire} fire(s), ${b.fault} fault(s), ${b.inhibit} inhibition(s), ${b.test} test(s)`);
+      return `<rect x="${(i * w + 1).toFixed(1)}" y="${H - h}" width="${(w - 2).toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" fill="${col[b.rank] || 'var(--muted)'}" data-t="${b.t}" data-tip="${esc(tip)}"/>`;
     }).join('');
     const cursor = ((state.t - T0) / SPAN) * W;
-    return `<svg class="timeline-bars" id="al-bars" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Frise de densité des événements du journal">
+    return `<svg class="timeline-bars" id="al-bars" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${L('Frise de densité des événements du journal', 'Density timeline of the log events')}">
       ${rects}<rect x="0" y="0" width="${W}" height="${H}" fill="transparent" data-bg="1" style="display:none"/><line x1="${cursor}" x2="${cursor}" y1="0" y2="${H}" stroke="var(--text)" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>`;
   }
   function panelHtml() {
@@ -218,10 +228,10 @@
     const col = (title, map, cls) => {
       const items = [...map.values()].sort((a, b) => a.since - b.since);
       return `<div class="panel-col"><h4>${title}<span class="pill ${items.length ? cls : 'neutral'}">${items.length}</span></h4>
-        ${items.length ? items.slice(0, 5).map((i) => `<div class="panel-item"><strong class="mono">${esc(i.tag)}</strong> ${esc(i.desc)}<small>depuis ${fmtDur(state.t - i.since)}${i.acked === false && map !== s.inhibit && map !== s.test ? ' · non acquitté' : ''}</small></div>`).join('') : '<p class="note" style="margin:0">Au repos</p>'}
-        ${items.length > 5 ? `<p class="note" style="margin:4px 0 0">Et ${items.length - 5} autre(s)</p>` : ''}</div>`;
+        ${items.length ? items.slice(0, 5).map((i) => `<div class="panel-item"><strong class="mono">${esc(i.tag)}</strong> ${esc(i.desc)}<small>${L('depuis', 'for')} ${fmtDur(state.t - i.since)}${i.acked === false && map !== s.inhibit && map !== s.test ? L(' · non acquitté', ' · not acknowledged') : ''}</small></div>`).join('') : `<p class="note" style="margin:0">${L('Au repos', 'Quiet')}</p>`}
+        ${items.length > 5 ? `<p class="note" style="margin:4px 0 0">${L(`Et ${items.length - 5} autre(s)`, `And ${items.length - 5} more`)}</p>` : ''}</div>`;
     };
-    return col('Feux', s.fire, 'bad') + col('Défauts', s.fault, 'warn') + col('Hors service', s.inhibit, 'warn') + col('Tests de zone', s.test, 'info');
+    return col(L('Feux', 'Fires'), s.fire, 'bad') + col(L('Défauts', 'Faults'), s.fault, 'warn') + col(L('Hors service', 'Disabled'), s.inhibit, 'warn') + col(L('Tests de zone', 'Zone tests'), s.test, 'info');
   }
   function renderReplay() {
     const box = $('#al-replay', host);
@@ -229,18 +239,18 @@
     box.innerHTML = `<div class="btn-row" style="margin-bottom:8px">
         <strong class="mono" style="font-size:16px">${d.toISOString().slice(0, 16).replace('T', ' ')} UTC</strong>
         <span class="spacer"></span>
-        <button class="btn" data-step="-1">Évt. précédent</button>
-        <button class="btn" data-step="1">Évt. suivant</button>
+        <button class="btn" data-step="-1">${L('Évt. précédent', 'Previous event')}</button>
+        <button class="btn" data-step="1">${L('Évt. suivant', 'Next event')}</button>
       </div>
       <div class="panel-cols" style="margin-bottom:10px">${panelHtml()}</div>
       ${timelineSvg(A().events)}
-      <input type="range" id="al-slider" min="0" max="2000" value="${Math.round(((state.t - T0) / SPAN) * 2000)}" aria-label="Instant reconstitué" style="width:100%;margin-top:4px">
+      <input type="range" id="al-slider" min="0" max="2000" value="${Math.round(((state.t - T0) / SPAN) * 2000)}" aria-label="${L('Instant reconstitué', 'Replayed moment')}" style="width:100%;margin-top:4px">
       <div class="legend" style="justify-content:flex-start">
-        <span><i style="background:var(--fire);border-color:var(--fire)"></i>Feu</span>
-        <span><i style="background:var(--series-4);border-color:var(--series-4)"></i>Défaut</span>
+        <span><i style="background:var(--fire);border-color:var(--fire)"></i>${L('Feu', 'Fire')}</span>
+        <span><i style="background:var(--series-4);border-color:var(--series-4)"></i>${L('Défaut', 'Fault')}</span>
         <span><i style="background:var(--series-7);border-color:var(--series-7)"></i>Inhibition</span>
         <span><i style="background:var(--series-1);border-color:var(--series-1)"></i>Test</span>
-        <span>Chaque barre prend la couleur de l’événement le plus grave. Cliquez pour y sauter.</span>
+        <span>${L('Chaque barre prend la couleur de l’événement le plus grave. Cliquez pour y sauter.', 'Each bar takes the colour of its most severe event. Click to jump to it.')}</span>
       </div>`;
     $('#al-slider', box).addEventListener('input', (e) => { state.t = T0 + (Number(e.target.value) / 2000) * SPAN; renderReplayKeep(e.target.value); });
     $$('[data-step]', box).forEach((b) => b.addEventListener('click', () => {
@@ -260,24 +270,29 @@
     if (s) { s.value = val; s.focus(); }
   }
   function diagnostics(a) {
+    const HIGH = L('Priorité haute', 'High priority');
+    const TODO = L('À traiter', 'To address');
     const items = [];
-    if (a.openInhibits.length) items.push(['bad', 'Priorité haute', 'Inhibitions non refermées', `${a.openInhibits.length} inhibition(s) encore active(s) en fin de journal : ${a.openInhibits.map((i) => `${i.tag} (${i.desc})`).join(', ')}. Un point désactivé puis oublié est un risque à lever.`]);
-    if (a.peak > 10) items.push(['bad', 'Priorité haute', 'Rafales d’alarmes', `Jusqu’à ${a.peak} alarmes en 10 minutes le ${fmtDate(a.peakAt)}. L’opérateur est noyé au moment où il doit décider.`]);
-    if (a.chatters.length) items.push(['warn', 'À traiter', 'Alarmes fugaces', `${a.chatters[0][0]} monte à ${a.chatters[0][1]} activations par heure. Une temporisation ou une hystérésis réduirait ce bruit.`]);
-    if (a.persistent.length) items.push(['warn', 'À traiter', 'Défauts persistants', `${a.persistent[0].tag} (${a.persistent[0].desc}) est resté actif ${fmtDur(a.persistent[0].dur)}. C’est plus un défaut non traité qu’un événement ponctuel.`]);
-    if (a.ackP90 > 20 * MIN) items.push(['info', 'À surveiller', 'Acquittement lent sur la traîne', `Le p90 du temps d’acquittement est de ${fmtDur(a.ackP90)}, pour une médiane de ${fmtDur(a.ackMedian)}.`]);
-    if (!items.length) items.push(['ok', 'Conforme', 'Aucun point bloquant', 'Le journal respecte les cibles de charge d’alarmes sur cette période.']);
+    if (a.openInhibits.length) {
+      const list = a.openInhibits.map((i) => `${i.tag} (${i.desc})`).join(', ');
+      items.push(['bad', HIGH, L('Inhibitions non refermées', 'Inhibitions left open'), L(`${a.openInhibits.length} inhibition(s) encore active(s) en fin de journal : ${list}. Un point désactivé puis oublié est un risque à lever.`, `${a.openInhibits.length} inhibition(s) still active at the end of the log: ${list}. A point disabled and then forgotten is a risk to remove.`)]);
+    }
+    if (a.peak > 10) items.push(['bad', HIGH, L('Rafales d’alarmes', 'Alarm floods'), L(`Jusqu’à ${a.peak} alarmes en 10 minutes le ${fmtDate(a.peakAt)}. L’opérateur est noyé au moment où il doit décider.`, `Up to ${a.peak} alarms in 10 minutes on ${fmtDate(a.peakAt)}. The operator is swamped just when a decision is needed.`)]);
+    if (a.chatters.length) items.push(['warn', TODO, L('Alarmes fugaces', 'Chattering alarms'), L(`${a.chatters[0][0]} monte à ${a.chatters[0][1]} activations par heure. Une temporisation ou une hystérésis réduirait ce bruit.`, `${a.chatters[0][0]} reaches ${a.chatters[0][1]} activations per hour. A delay or some hysteresis would reduce this noise.`)]);
+    if (a.persistent.length) items.push(['warn', TODO, L('Défauts persistants', 'Persistent faults'), L(`${a.persistent[0].tag} (${a.persistent[0].desc}) est resté actif ${fmtDur(a.persistent[0].dur)}. C’est plus un défaut non traité qu’un événement ponctuel.`, `${a.persistent[0].tag} (${a.persistent[0].desc}) stayed active for ${fmtDur(a.persistent[0].dur)}. This is an unaddressed fault rather than a one-off event.`)]);
+    if (a.ackP90 > 20 * MIN) items.push(['info', L('À surveiller', 'To watch'), L('Acquittement lent sur la traîne', 'Slow acknowledgement in the tail'), L(`Le p90 du temps d’acquittement est de ${fmtDur(a.ackP90)}, pour une médiane de ${fmtDur(a.ackMedian)}.`, `The p90 acknowledgement time is ${fmtDur(a.ackP90)}, against a median of ${fmtDur(a.ackMedian)}.`)]);
+    if (!items.length) items.push(['ok', L('Conforme', 'Compliant'), L('Aucun point bloquant', 'No blocking issue'), L('Le journal respecte les cibles de charge d’alarmes sur cette période.', 'The log meets the alarm load targets over this period.')]);
     return items;
   }
   function eemuaRow(label, sub, value, unit, target, ok, ratio) {
     return `<div class="eemua-row"><div><strong>${label}</strong><br><small>${sub}</small></div>
-      <div style="text-align:right"><strong style="font-size:18px">${value}</strong> <small>${unit}</small><br><small>cible ${target}</small> <span class="pill ${ok ? 'ok' : 'bad'}">${ok ? 'Conforme' : 'Hors cible'}</span></div>
+      <div style="text-align:right"><strong style="font-size:18px">${value}</strong> <small>${unit}</small><br><small>${L('cible', 'target')} ${target}</small> <span class="pill ${ok ? 'ok' : 'bad'}">${ok ? L('Conforme', 'Compliant') : L('Hors cible', 'Off target')}</span></div>
       <div class="meter"><i class="${ok ? '' : 'bad'}" style="width:${clamp(ratio * 50, 2, 100)}%"></i></div></div>`;
   }
   function chartSvg(a) {
     const W = 620;
     const H = 230;
-    const L = 34;
+    const L_ = 34;
     const B = 22;
     const T = 8;
     const max = Math.max(...a.days.map((d) => d.normal + d.flood), 10);
@@ -285,70 +300,72 @@
     const y = (v) => T + (H - T - B) * (1 - v / (step * Math.ceil(max / step)));
     const top = step * Math.ceil(max / step);
     let g = '';
-    for (let v = 0; v <= top; v += step) g += `<line x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
-    const bw = (W - L) / 30;
+    for (let v = 0; v <= top; v += step) g += `<line x1="${L_}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L_ - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+    const bw = (W - L_) / 30;
     const rounded = (x, yy, w, h) => { const r = Math.min(3, w / 2, h); return `M${x} ${yy + h}V${yy + r}Q${x} ${yy} ${x + r} ${yy}H${x + w - r}Q${x + w} ${yy} ${x + w} ${yy + r}V${yy + h}Z`; };
+    const dayLabel = (d) => fmtDay(new Date(T0 + d * DAY));
     let bars = '';
     a.days.forEach((d) => {
-      const x = L + d.d * bw + 1.5;
+      const x = L_ + d.d * bw + 1.5;
       const w = bw - 3;
       const base = y(0);
       const hN = base - y(d.normal);
       const hF = base - y(d.flood);
-      const tip = esc(`${pad(d.d + 1)}/03 : ${d.normal + d.flood} alarmes, dont ${d.flood} en rafale`);
+      const total = d.normal + d.flood;
+      const tip = esc(L(`${dayLabel(d.d)} : ${total} alarmes, dont ${d.flood} en rafale`, `${dayLabel(d.d)}: ${total} alarms, ${d.flood} of them in a flood`));
       if (d.flood) {
         bars += hN > 0 ? `<rect x="${x}" y="${base - hN}" width="${w}" height="${Math.max(0, hN - 1)}" fill="var(--series-1)" data-tip="${tip}"/>` : '';
         bars += `<path d="${rounded(x, base - hN - hF - 1, w, hF)}" fill="var(--fire)" data-tip="${tip}"/>`;
       } else if (hN > 0) bars += `<path d="${rounded(x, base - hN, w, hN)}" fill="var(--series-1)" data-tip="${tip}"/>`;
-      bars += `<rect x="${L + d.d * bw}" y="${T}" width="${bw}" height="${H - T - B}" fill="transparent" data-tip="${tip}"/>`;
+      bars += `<rect x="${L_ + d.d * bw}" y="${T}" width="${bw}" height="${H - T - B}" fill="transparent" data-tip="${tip}"/>`;
     });
-    const labels = [0, 7, 14, 21, 28].map((d) => `<text x="${L + (d + 0.5) * bw}" y="${H - 6}" text-anchor="middle">${pad(d + 1)}/03</text>`).join('');
-    return `<svg class="chart" id="al-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Alarmes opérateur par jour, avec la part en rafale">${g}${bars}${labels}</svg>
-      <div class="legend" style="justify-content:flex-start"><span><i style="background:var(--series-1);border-color:var(--series-1)"></i>Alarmes hors rafale</span><span><i style="background:var(--fire);border-color:var(--fire)"></i>Alarmes en rafale (plus de 10 en 10 min)</span></div>`;
+    const labels = [0, 7, 14, 21, 28].map((d) => `<text x="${L_ + (d + 0.5) * bw}" y="${H - 6}" text-anchor="middle">${dayLabel(d)}</text>`).join('');
+    return `<svg class="chart" id="al-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${L('Alarmes opérateur par jour, avec la part en rafale', 'Operator alarms per day, with the share in floods')}">${g}${bars}${labels}</svg>
+      <div class="legend" style="justify-content:flex-start"><span><i style="background:var(--series-1);border-color:var(--series-1)"></i>${L('Alarmes hors rafale', 'Alarms outside floods')}</span><span><i style="background:var(--fire);border-color:var(--fire)"></i>${L('Alarmes en rafale (plus de 10 en 10 min)', 'Alarms in a flood (more than 10 in 10 min)')}</span></div>`;
   }
   function compareHtml() {
     const a = data.before;
     const b = data.after;
     const rows = [
-      ['Alarmes opérateur', a.opCount, b.opCount, (v) => nf(v)],
-      ['Taux moyen par 10 min', a.avg, b.avg, (v) => nf(v, 2)],
-      ['Pic sur 10 min', a.peak, b.peak, (v) => nf(v)],
-      ['Temps en rafale (%)', a.floodPct, b.floodPct, (v) => nf(v, 2)],
-      ['Poids des 10 pires tags (%)', a.top10Pct, b.top10Pct, (v) => nf(v, 1)],
-      ['Inhibitions non refermées', a.openInhibits.length, b.openInhibits.length, (v) => nf(v)],
+      [L('Alarmes opérateur', 'Operator alarms'), a.opCount, b.opCount, (v) => nf(v)],
+      [L('Taux moyen par 10 min', 'Average rate per 10 min'), a.avg, b.avg, (v) => nf(v, 2)],
+      [L('Pic sur 10 min', '10-minute peak'), a.peak, b.peak, (v) => nf(v)],
+      [L('Temps en rafale (%)', 'Time in flood (%)'), a.floodPct, b.floodPct, (v) => nf(v, 2)],
+      [L('Poids des 10 pires tags (%)', 'Share of the 10 worst tags (%)'), a.top10Pct, b.top10Pct, (v) => nf(v, 1)],
+      [L('Inhibitions non refermées', 'Inhibitions left open'), a.openInhibits.length, b.openInhibits.length, (v) => nf(v)],
     ];
-    return `<div class="table-wrap"><table class="data"><thead><tr><th>Indicateur</th><th class="num">Avant</th><th class="num">Après</th><th class="num">Écart</th></tr></thead>
+    return `<div class="table-wrap"><table class="data"><thead><tr><th>${L('Indicateur', 'Indicator')}</th><th class="num">${L('Avant', 'Before')}</th><th class="num">${L('Après', 'After')}</th><th class="num">${L('Écart', 'Change')}</th></tr></thead>
       <tbody>${rows.map(([k, x, y, f]) => { const d = y - x; return `<tr><td>${k}</td><td class="num">${f(x)}</td><td class="num">${f(y)}</td><td class="num"><span class="pill ${d < 0 ? 'ok' : d > 0 ? 'bad' : 'neutral'}">${d < 0 ? '▼' : d > 0 ? '▲' : '='} ${f(Math.abs(d))}</span></td></tr>`; }).join('')}</tbody></table></div>`;
   }
   function renderAll() {
     const a = A();
-    $('#al-log', host).innerHTML = `<button class="btn ${state.log === 'before' ? 'on' : ''}" data-log="before">Journal avant intervention</button>
-      <button class="btn ${state.log === 'after' ? 'on' : ''}" data-log="after">Journal après intervention</button>
-      <button class="btn ${state.compare ? 'on' : ''}" data-log="compare" aria-pressed="${state.compare}">Comparer les deux</button>
+    $('#al-log', host).innerHTML = `<button class="btn ${state.log === 'before' ? 'on' : ''}" data-log="before">${L('Journal avant intervention', 'Log before intervention')}</button>
+      <button class="btn ${state.log === 'after' ? 'on' : ''}" data-log="after">${L('Journal après intervention', 'Log after intervention')}</button>
+      <button class="btn ${state.compare ? 'on' : ''}" data-log="compare" aria-pressed="${state.compare}">${L('Comparer les deux', 'Compare both')}</button>
       <span class="spacer"></span>
-      <button class="btn" data-log="csv">Télécharger le journal fictif</button>`;
-    $('#al-compare', host).innerHTML = state.compare ? `<section class="card"><h3>Avant / après : prouver qu’une intervention a réduit la charge</h3>${compareHtml()}</section>` : '';
+      <button class="btn" data-log="csv">${L('Télécharger le journal fictif', 'Download the fictional log')}</button>`;
+    $('#al-compare', host).innerHTML = state.compare ? `<section class="card"><h3>${L('Avant / après : prouver qu’une intervention a réduit la charge', 'Before / after: proving that an intervention reduced the load')}</h3>${compareHtml()}</section>` : '';
     $('#al-kpis', host).innerHTML = [
-      [nf(a.total), `Événements sur 30 jours`], [nf(a.opCount), `Alarmes opérateur, ${a.tags} tags`], [nf(a.avg, 2), 'Alarmes par 10 min'],
-      [`${nf(a.floodPct, 1)} %`, 'Temps en rafale'], [nf(a.inhibitCount), 'Inhibitions'], [fmtDur(a.ackMedian), 'Acquittement médian'],
+      [nf(a.total), L('Événements sur 30 jours', 'Events over 30 days')], [nf(a.opCount), L(`Alarmes opérateur, ${a.tags} tags`, `Operator alarms, ${a.tags} tags`)], [nf(a.avg, 2), L('Alarmes par 10 min', 'Alarms per 10 min')],
+      [L(`${nf(a.floodPct, 1)} %`, `${nf(a.floodPct, 1)}%`), L('Temps en rafale', 'Time in flood')], [nf(a.inhibitCount), 'Inhibitions'], [fmtDur(a.ackMedian), L('Acquittement médian', 'Median acknowledgement')],
     ].map(([v, l]) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('');
     $('#al-diag', host).innerHTML = diagnostics(a).map(([k, p, t, m]) => `<div class="diag-item"><h4>${t}<span class="pill ${k}">${p}</span></h4>${esc(m)}</div>`).join('');
-    $('#al-eemua', host).innerHTML = `<h3>Évaluation EEMUA 191 et ISA 18.2</h3>
-      ${eemuaRow('Taux moyen', 'sur toute la période', nf(a.avg, 2), 'par 10 min', '≤ 1', a.avg <= 1, a.avg / 1)}
-      ${eemuaRow('Pic sur 10 minutes', `le ${fmtDate(a.peakAt)}`, a.peak, 'alarmes', '≤ 10', a.peak <= 10, a.peak / 10)}
-      ${eemuaRow('Temps passé en rafale', 'fenêtres de 10 min saturées', nf(a.floodPct, 2), '%', '< 1 %', a.floodPct < 1, a.floodPct / 1)}
-      ${eemuaRow('Poids des 10 pires tags', 'concentration de la charge', nf(a.top10Pct, 1), '%', '< 20 %', a.top10Pct < 20, a.top10Pct / 20)}`;
-    $('#al-chart-box', host).innerHTML = `<h3>Charge d’alarmes par jour</h3>${chartSvg(a)}`;
+    $('#al-eemua', host).innerHTML = `<h3>${L('Évaluation EEMUA 191 et ISA 18.2', 'EEMUA 191 and ISA 18.2 assessment')}</h3>
+      ${eemuaRow(L('Taux moyen', 'Average rate'), L('sur toute la période', 'over the whole period'), nf(a.avg, 2), L('par 10 min', 'per 10 min'), '≤ 1', a.avg <= 1, a.avg / 1)}
+      ${eemuaRow(L('Pic sur 10 minutes', '10-minute peak'), L(`le ${fmtDate(a.peakAt)}`, `on ${fmtDate(a.peakAt)}`), a.peak, L('alarmes', 'alarms'), '≤ 10', a.peak <= 10, a.peak / 10)}
+      ${eemuaRow(L('Temps passé en rafale', 'Time spent in flood'), L('fenêtres de 10 min saturées', 'saturated 10-minute windows'), nf(a.floodPct, 2), '%', L('< 1 %', '< 1%'), a.floodPct < 1, a.floodPct / 1)}
+      ${eemuaRow(L('Poids des 10 pires tags', 'Share of the 10 worst tags'), L('concentration de la charge', 'load concentration'), nf(a.top10Pct, 1), '%', L('< 20 %', '< 20%'), a.top10Pct < 20, a.top10Pct / 20)}`;
+    $('#al-chart-box', host).innerHTML = `<h3>${L('Charge d’alarmes par jour', 'Alarm load per day')}</h3>${chartSvg(a)}`;
     const chart = $('#al-chart', host);
     chart.addEventListener('mousemove', (e) => { const tip = e.target.dataset?.tip; if (tip) Tip.show(tip, e.clientX, e.clientY); else Tip.hide(); });
     chart.addEventListener('mouseleave', () => Tip.hide());
-    $('#al-floods', host).innerHTML = a.floods.length ? a.floods.map((f) => `<tr class="clickable" data-t="${f.start}"><td>${fmtDate(f.start)}</td><td class="num">${f.windows * 10} min</td><td class="num">${f.n}</td><td class="num">${f.peak}</td><td class="mono">${f.top.map(([t, n]) => `${t} ×${n}`).join(' · ')}</td></tr>`).join('') : '<tr><td colspan="5">Aucune rafale sur la période.</td></tr>';
-    $('#al-bad', host).innerHTML = a.top.slice(0, 10).map((x) => `<tr><td class="mono">${esc(x.tag)}</td><td>${esc(x.desc)}</td><td class="num">${x.n}</td><td><span class="bar-mini"><i style="width:${(x.n / a.top[0].n) * 100}%"></i></span>${nf((x.n / a.opCount) * 100, 1)} %</td></tr>`).join('');
+    $('#al-floods', host).innerHTML = a.floods.length ? a.floods.map((f) => `<tr class="clickable" data-t="${f.start}"><td>${fmtDate(f.start)}</td><td class="num">${f.windows * 10} min</td><td class="num">${f.n}</td><td class="num">${f.peak}</td><td class="mono">${f.top.map(([t, n]) => `${t} ×${n}`).join(' · ')}</td></tr>`).join('') : `<tr><td colspan="5">${L('Aucune rafale sur la période.', 'No flood over this period.')}</td></tr>`;
+    $('#al-bad', host).innerHTML = a.top.slice(0, 10).map((x) => `<tr><td class="mono">${esc(x.tag)}</td><td>${esc(x.desc)}</td><td class="num">${x.n}</td><td><span class="bar-mini"><i style="width:${(x.n / a.top[0].n) * 100}%"></i></span>${L(`${nf((x.n / a.opCount) * 100, 1)} %`, `${nf((x.n / a.opCount) * 100, 1)}%`)}</td></tr>`).join('');
     renderReplay();
   }
 
   App.pages.alarms = {
-    title: 'Analyseur d’alarmes',
+    title: L('Analyseur d’alarmes', 'Alarm log analyser'),
     mount(el) {
       host = el;
       if (!data.before) {
@@ -356,25 +373,25 @@
         data.after = analyse(generate(32, true));
       }
       el.innerHTML = `<header class="page-head">
-        <div class="kicker">Analyse · HTML, JavaScript · 100 % hors-ligne · Issu du PhoenixLogViewer</div>
-        <h1>Analyseur de journaux d’alarmes</h1>
-        <p>Un export de centrale compte souvent plus de dix mille lignes, illisibles à l’œil nu. L’outil les transforme en diagnostic noté selon les standards de gestion d’alarme, et rejoue ce que la centrale affichait à n’importe quel instant.</p>
+        <div class="kicker">${L('Analyse · HTML, JavaScript · 100 % hors-ligne · Issu du PhoenixLogViewer', 'Analysis · HTML, JavaScript · 100% offline · Grew out of PhoenixLogViewer')}</div>
+        <h1>${L('Analyseur de journaux d’alarmes', 'Alarm log analyser')}</h1>
+        <p>${L('Un export de centrale compte souvent plus de dix mille lignes, illisibles à l’œil nu. L’outil les transforme en diagnostic noté selon les standards de gestion d’alarme, et rejoue ce que la centrale affichait à n’importe quel instant.', 'A control panel export often runs to more than ten thousand lines, impossible to read by eye. The tool turns them into a diagnosis scored against alarm management standards, and replays what the panel displayed at any moment.')}</p>
       </header>
-      ${simBanner('Le journal de ces 30 jours est entièrement généré, avec une rafale, une alarme fugace, un défaut oublié et une inhibition non refermée. Aucun journal de navire réel n’est utilisé.')}
+      ${simBanner(L('Le journal de ces 30 jours est entièrement généré, avec une rafale, une alarme fugace, un défaut oublié et une inhibition non refermée. Aucun journal de navire réel n’est utilisé.', 'The log for these 30 days is entirely generated, with alarm floods, a chattering alarm, a forgotten fault and an inhibition left open. No real ship log is used.'))}
       <div class="stack">
         <div class="btn-row" id="al-log"></div>
         <div id="al-compare"></div>
-        <section class="card"><h3>Reconstitution de la centrale à l’instant T</h3><div id="al-replay"></div></section>
+        <section class="card"><h3>${L('Reconstitution de la centrale à l’instant T', 'Panel state at a chosen moment')}</h3><div id="al-replay"></div></section>
         <div class="kpis" id="al-kpis" style="margin:0"></div>
-        <section class="card"><h3>Diagnostic et recommandations</h3><div class="diag" id="al-diag"></div></section>
+        <section class="card"><h3>${L('Diagnostic et recommandations', 'Diagnosis and recommendations')}</h3><div class="diag" id="al-diag"></div></section>
         <div class="grid two">
           <section class="card" id="al-chart-box"></section>
           <section class="card" id="al-eemua"></section>
         </div>
-        <section class="card"><h3>Épisodes de rafale</h3><p class="note">Cliquez sur un épisode pour caler la reconstitution dessus.</p>
-          <div class="table-wrap"><table class="data"><thead><tr><th>Début</th><th class="num">Durée</th><th class="num">Alarmes</th><th class="num">Pic /10 min</th><th>Principaux responsables</th></tr></thead><tbody id="al-floods"></tbody></table></div></section>
-        <section class="card"><h3>Les pires tags (bad actors)</h3>
-          <div class="table-wrap"><table class="data"><thead><tr><th>Tag</th><th>Désignation</th><th class="num">Activations</th><th>Part de la charge</th></tr></thead><tbody id="al-bad"></tbody></table></div></section>
+        <section class="card"><h3>${L('Épisodes de rafale', 'Flood episodes')}</h3><p class="note">${L('Cliquez sur un épisode pour caler la reconstitution dessus.', 'Click an episode to jump the replay to it.')}</p>
+          <div class="table-wrap"><table class="data"><thead><tr><th>${L('Début', 'Start')}</th><th class="num">${L('Durée', 'Duration')}</th><th class="num">${L('Alarmes', 'Alarms')}</th><th class="num">${L('Pic /10 min', 'Peak /10 min')}</th><th>${L('Principaux responsables', 'Main contributors')}</th></tr></thead><tbody id="al-floods"></tbody></table></div></section>
+        <section class="card"><h3>${L('Les pires tags (bad actors)', 'The worst tags (bad actors)')}</h3>
+          <div class="table-wrap"><table class="data"><thead><tr><th>Tag</th><th>${L('Désignation', 'Description')}</th><th class="num">Activations</th><th>${L('Part de la charge', 'Share of the load')}</th></tr></thead><tbody id="al-bad"></tbody></table></div></section>
       </div>`;
       $('#al-log', el).addEventListener('click', (e) => {
         const b = e.target.closest('[data-log]');
@@ -382,8 +399,8 @@
         const v = b.dataset.log;
         if (v === 'compare') state.compare = !state.compare;
         else if (v === 'csv') {
-          const lines = ['horodatage;tag;etat;designation', ...A().events.map((x) => `${new Date(x.t).toISOString()};${x.tag};${x.state};${x.desc}`)];
-          download(`journal_fictif_${state.log}.csv`, `﻿${lines.join('\n')}`, 'text/csv;charset=utf-8');
+          const rows = [L(['horodatage', 'tag', 'etat', 'designation'], ['timestamp', 'tag', 'state', 'description']), ...A().events.map((x) => [new Date(x.t).toISOString(), x.tag, x.state, x.desc])];
+          download(L(`journal_fictif_${state.log === 'before' ? 'avant' : 'apres'}.csv`, `fictional_log_${state.log}.csv`), csv(rows), 'text/csv;charset=utf-8');
           return;
         } else state.log = v;
         renderAll();
